@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{74044A0D-2784-4BFB-BA68-CBAC24C89EF9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{20157F09-F0FB-4A36-BF3B-148F6B7F50A0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{E1E74DFA-2BCE-4D6E-AFA6-4CAE3BF0107D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{1EBF85A5-DBF0-444E-8BD2-03ED9CC012ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialStatisticsAdminiculum.Api", "FinancialStatisticsAdminiculum.Api\FinancialStatisticsAdminiculum.Api.csproj", "{6C7E43E2-775F-432F-B9CF-5A08EB9BCAD0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialStatisticsAdminiculum.Core", "FinancialStatisticsAdminiculum.Core\FinancialStatisticsAdminiculum.Core.csproj", "{E77581EE-AD29-4544-A769-FBD9D5DBFF7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialStatisticsAdminiculum.Application", "FinancialStatisticsAdminiculum.Application\FinancialStatisticsAdminiculum.Application.csproj", "{A12C834B-82D7-46D1-832A-A77F02E67047}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialStatisticsAdminiculum.Infrastructure", "FinancialStatisticsAdminiculum.Infrastructure\FinancialStatisticsAdminiculum.Infrastructure.csproj", "{DA173E24-F265-4036-B55E-994F9B2B3392}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6C7E43E2-775F-432F-B9CF-5A08EB9BCAD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C7E43E2-775F-432F-B9CF-5A08EB9BCAD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C7E43E2-775F-432F-B9CF-5A08EB9BCAD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C7E43E2-775F-432F-B9CF-5A08EB9BCAD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E77581EE-AD29-4544-A769-FBD9D5DBFF7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E77581EE-AD29-4544-A769-FBD9D5DBFF7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E77581EE-AD29-4544-A769-FBD9D5DBFF7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E77581EE-AD29-4544-A769-FBD9D5DBFF7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A12C834B-82D7-46D1-832A-A77F02E67047}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A12C834B-82D7-46D1-832A-A77F02E67047}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A12C834B-82D7-46D1-832A-A77F02E67047}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A12C834B-82D7-46D1-832A-A77F02E67047}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA173E24-F265-4036-B55E-994F9B2B3392}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA173E24-F265-4036-B55E-994F9B2B3392}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA173E24-F265-4036-B55E-994F9B2B3392}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA173E24-F265-4036-B55E-994F9B2B3392}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6C7E43E2-775F-432F-B9CF-5A08EB9BCAD0} = {20157F09-F0FB-4A36-BF3B-148F6B7F50A0}
+		{E77581EE-AD29-4544-A769-FBD9D5DBFF7B} = {20157F09-F0FB-4A36-BF3B-148F6B7F50A0}
+		{A12C834B-82D7-46D1-832A-A77F02E67047} = {20157F09-F0FB-4A36-BF3B-148F6B7F50A0}
+		{DA173E24-F265-4036-B55E-994F9B2B3392} = {20157F09-F0FB-4A36-BF3B-148F6B7F50A0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B317990C-0B2F-4DE9-87F2-A423EF5873FB}
+	EndGlobalSection
+EndGlobal
