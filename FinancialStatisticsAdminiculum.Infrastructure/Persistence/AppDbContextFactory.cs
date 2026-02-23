@@ -12,7 +12,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence
             // 1. Build configuration manually to read appsettings.json
             // We point to the API folder to get the connection string
             IConfigurationRoot configuration = new ConfigurationBuilder()
-                .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../FinancialStatisticsAdminiculum.API"))
+                .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../FinancialStatisticsAdminiculum.Api"))
                 .AddJsonFile("appsettings.json")
                 .Build();
 
