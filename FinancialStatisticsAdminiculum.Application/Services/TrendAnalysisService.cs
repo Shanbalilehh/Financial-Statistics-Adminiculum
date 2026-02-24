@@ -1,11 +1,11 @@
 ﻿using FinancialStatisticsAdminiculum.Core.Interfaces;
-using FinancialStatisticsAdminiculum.Core.Entities; // Using your updated namespace
+using FinancialStatisticsAdminiculum.Core.Entities;
 using FinancialStatisticsAdminiculum.Core.Extensions;
 using FinancialStatisticsAdminiculum.Application.DTOs;
 
 namespace FinancialStatisticsAdminiculum.Application.Services
 {
-    // Clustered Service strictly for Trend calculations
+    // Organized by responsibility (matches TrendExtensions)
     public class TrendAnalysisService
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -15,38 +15,39 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             _unitOfWork = unitOfWork;
         }
 
+        // 1. The Async wrapper (Handles I/O and Unit of Work)
         public async Task<TimeSeriesDto> GetMovingAverageAsync(string ticker, DateTime from, DateTime to, int period)
         {
-            // 1. Fetch raw data
-            var rawPoints = (await _unitOfWork.PricePoints.FindAsync(p => 
+            var rawPoints = await _unitOfWork.PricePoints.FindAsync(p => 
                 p.AssetTicker == ticker && 
                 p.Timestamp >= from && 
-                p.Timestamp <= to))
-                .OrderBy(p => p.Timestamp) // Ensure chronological order
-                .ToList();
+                p.Timestamp <= to);
 
-            if (!rawPoints.Any())
-                return new TimeSeriesDto { Ticker = ticker, IndicatorName = $"SMA ({period})", Data = new() };
+            // Pass to the synchronous method to safely use Spans
+            return ProcessMovingAverage(ticker, rawPoints.ToList(), period);
+        }
 
-            // 2. Map to your updated high-performance Math Domain Object
+        // 2. The Sync processor (CPU bound, Spans are fully supported here)
+        private TimeSeriesDto ProcessMovingAverage(string ticker, List<PricePoint> rawPoints, int period)
+        {
             var times = rawPoints.Select(p => p.Timestamp).ToArray();
             var values = rawPoints.Select(p => (double)p.Value).ToArray(); 
-            
-            // TICKER INCLUDED HERE!
-            var rawSeries = new TimeSeries(ticker, times, values); 
 
-            // 3. Apply the OCP Mathematical Transformation
+            // Using your updated constructor with Ticker
+            var rawSeries = new TimeSeries(ticker, times, values);
+
+            // Apply OCP math
             var smaSeries = rawSeries.CalculateSMA(period);
 
-            // 4. Map back to DTO
             var dto = new TimeSeriesDto
             {
-                Ticker = smaSeries.Ticker, // Using the ticker from the series
+                Ticker = ticker,
                 IndicatorName = $"SMA ({period})",
-                Data = new List<DataPointDto>(smaSeries.Values.Length)
+                Data = new List<DataPointDto>(smaSeries.GetRawValues().Length)
             };
 
-            ReadOnlySpan<DateTime> smaTimes = smaSeries.Time;
+            // It is now perfectly legal to capture the Span here
+            var smaTimes = smaSeries.Time;
             var smaValues = smaSeries.Values;
 
             for (int i = 0; i < smaValues.Length; i++)
