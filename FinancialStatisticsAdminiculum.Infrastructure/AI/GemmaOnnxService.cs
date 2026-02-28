@@ -10,46 +10,13 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI
         private readonly Tokenizer _tokenizer;
         private readonly string _systemPrompt;
 
-        public GemmaOnnxService(string modelPath)
+        public GemmaOnnxService(string modelPath, string dynamicToolsJson)
         {
             _model = new Model(modelPath);
             _tokenizer = new Tokenizer(_model);
 
-            var toolsJson = """
-            [
-              {
-                "type": "function",
-                "function": {
-                  "name": "get_moving_average",
-                  "description": "Calculates the Simple Moving Average (SMA) for a financial asset over a specific date range.",
-                  "parameters": {
-                    "type": "object",
-                    "properties": {
-                      "ticker": {
-                        "type": "string",
-                        "description": "The financial ticker symbol, e.g., 'XAU' for Gold."
-                      },
-                      "from": {
-                        "type": "string",
-                        "description": "The start date in YYYY-MM-DD format."
-                      },
-                      "to": {
-                        "type": "string",
-                        "description": "The end date in YYYY-MM-DD format."
-                      },
-                      "period": {
-                        "type": "integer",
-                        "description": "The lookback period."
-                      }
-                    },
-                    "required": ["ticker", "from", "to", "period"]
-                  }
-                }
-              }
-            ]
-            """;
-
-            _systemPrompt = $"<start_of_turn>user\nYou have access to the following tools:\n{toolsJson}\n\n";
+            _systemPrompt = $"<start_of_turn>user\nYou have access to the following tools:\n{dynamicToolsJson}\n\n";
+            
         }
 
         public async Task<string> ExtractToolCallAsync(string userPrompt)
@@ -64,9 +31,8 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI
                 generatorParams.SetSearchOption("temperature", 0.0);
                 generatorParams.SetSearchOption("max_length", 500);
 
-                // ✅ Pass sequences directly to the Generator, not via GeneratorParams
                 using var generator = new Generator(_model, generatorParams);
-                generator.AppendTokenSequences(sequences);  // ← correct method
+                generator.AppendTokenSequences(sequences);  
 
                 using var tokenizerStream = _tokenizer.CreateStream();
                 var result = new StringBuilder();
