@@ -15,8 +15,19 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI
             _model = new Model(modelPath);
             _tokenizer = new Tokenizer(_model);
 
-            _systemPrompt = $"<start_of_turn>user\nYou have access to the following tools:\n{dynamicToolsJson}\n\n";
-            
+            //_systemPrompt = $"<start_of_turn>user\nYou have access to the following tools:\n{dynamicToolsJson}\n\n";
+            _systemPrompt = $"""
+            <start_of_turn>user
+            You are a strict internal API routing engine. You have access to the following tools:
+            {dynamicToolsJson}
+
+            CRITICAL INSTRUCTIONS:
+            - You must output ONLY valid, raw JSON.
+            - DO NOT wrap the JSON in markdown blocks (e.g., ```json).
+            - DO NOT output any conversational text, greetings, or explanations before or after the JSON.
+            <end_of_turn>
+
+            """;
         }
 
         public async Task<string> ExtractToolCallAsync(string userPrompt)

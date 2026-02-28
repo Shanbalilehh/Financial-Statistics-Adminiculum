@@ -5,12 +5,13 @@ using FinancialStatisticsAdminiculum.Infrastructure.AI;
 using FinancialStatisticsAdminiculum.Application.AI;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using Microsoft.EntityFrameworkCore;
+using FinancialStatisticsAdminiculum.Application.Services;
 
 namespace FinancialStatisticsAdminiculum.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -30,26 +31,33 @@ namespace FinancialStatisticsAdminiculum.Api
             // Register Unit of Work
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            //steps to 
+            //AI Service Registration with Dynamic JSON Schema  
             // 1. Build the massive JSON string dynamically at startup
             string dynamicToolsJson = AiSchemaAggregator.BuildCombinedToolJson();
 
             // 2. Pass it directly into your Singleton AI Service
-            // (You'll need to slightly update GemmaOnnxService's constructor to accept this string)
             builder.Services.AddSingleton<INlpEngine>(sp => 
-                new GemmaOnnxService("path/to/model", dynamicToolsJson));
+                new GemmaOnnxService(@"C:\Users\holit\Downloads\FunctionGemmaPytorch\functiongemma_onnx_genai", dynamicToolsJson));
 
             // 3. Register your execution handlers
-            // Notice we can use the static ToolName property here too!
             builder.Services.AddKeyedScoped<IAiToolHandler, SmaToolHandler>(SmaToolHandler.ToolName);
 
             builder.Services.AddScoped<OrchestratorService>();
+            builder.Services.AddScoped<TrendAnalysisService>();
 
+            // Register the Database Seeder
+            builder.Services.AddScoped<DatabaseSeeder>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+                await seeder.SeedAsync();
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

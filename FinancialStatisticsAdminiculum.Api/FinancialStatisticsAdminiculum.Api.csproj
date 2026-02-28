@@ -15,10 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\FinancialStatisticsAdminiculum.Application\FinancialStatisticsAdminiculum.Application.csproj" />
     <ProjectReference Include="..\FinancialStatisticsAdminiculum.Core\FinancialStatisticsAdminiculum.Core.csproj" />
     <ProjectReference Include="..\FinancialStatisticsAdminiculum.Infrastructure\FinancialStatisticsAdminiculum.Infrastructure.csproj" />

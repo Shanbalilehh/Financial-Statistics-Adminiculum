@@ -8,7 +8,6 @@ namespace FinancialStatisticsAdminiculum.Application.AI
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        // JsonElement holds the raw JSON tree, allowing infinite flexibility
         [JsonPropertyName("arguments")]
         public JsonElement Arguments { get; set; } 
     }
