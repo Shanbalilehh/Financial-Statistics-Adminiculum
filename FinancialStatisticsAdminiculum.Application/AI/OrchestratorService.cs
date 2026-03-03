@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
-using FinancialStatisticsAdminiculum.Core.Interfaces; // Add this
+using FinancialStatisticsAdminiculum.Core.Interfaces; 
+using FinancialStatisticsAdminiculum.Application.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Application.AI
 {
-    public class OrchestratorService
+    public class OrchestratorService : IOrchestratorService
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly INlpEngine _nlpEngine; // 1. Add the NLP Engine
-
+        private readonly INlpEngine _nlpEngine; 
         // 2. Inject it via the constructor
         public OrchestratorService(IServiceProvider serviceProvider, INlpEngine nlpEngine)
         {

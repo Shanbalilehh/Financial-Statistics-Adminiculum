@@ -1,0 +1,115 @@
+﻿using Castle.DynamicProxy;
+using Castle.Core.Internal; 
+using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
+using FinancialStatisticsAdminiculum.Core.Interfaces;
+using FinancialStatisticsAdminiculum.Core.Exceptions;
+
+namespace FinancialStatisticsAdminiculum.Application.Services
+{
+    public class SecurityExceptionInterceptor : IInterceptor
+    {
+        private readonly IServiceProvider _serviceProvider;
+
+        public SecurityExceptionInterceptor(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public void Intercept(IInvocation invocation)
+        {
+            invocation.Proceed();
+            var returnType = invocation.Method.ReturnType;
+
+            if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                var resultType = returnType.GetGenericArguments()[0];
+                var method = typeof(SecurityExceptionInterceptor)
+                    .GetMethod(nameof(HandleAsyncWithResult), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(resultType);
+
+                invocation.ReturnValue = method.Invoke(this, new[] { invocation.ReturnValue, invocation });
+            }
+            else if (returnType == typeof(Task))
+            {
+                // Correction CS8600 et CS8604 : Vérification de null avant la conversion
+                var task = invocation.ReturnValue as Task;
+                if (task is null)
+                {
+                    throw new InvalidOperationException("La valeur de retour de la méthode est nulle alors qu'un Task était attendu.");
+                }
+                invocation.ReturnValue = HandleAsync(task, invocation);
+            }
+        }
+
+        private async Task HandleAsync(Task task, IInvocation invocation)
+        {
+            try
+            {
+                await task;
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex, invocation);
+            }
+        }
+
+        private async Task<T> HandleAsyncWithResult<T>(Task<T> task, IInvocation invocation)
+        {
+            try
+            {
+                return await task;
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex, invocation);
+                return default!; // Compiler requires this, but execution won't reach here due to the throw.
+            }
+        }
+
+        private void HandleException(Exception ex, IInvocation invocation)
+        {
+            // 1. Identifier la communauté de risque (utilise maintenant invocation.TargetType)
+            string communityKey = DetermineRiskCommunity(invocation.TargetType!);
+
+            // 2. Résoudre l'expert D&R spécifique via DI Keyed
+            var expert = _serviceProvider.GetKeyedService<IDiagnosticExpert>(communityKey);
+
+            if (expert == null)
+            {
+                // No expert registered? Bubble up a generic safe failure.
+                throw new InvalidOperationException("Unhandled system failure. No diagnostic expert found.");
+            }
+
+            // 3. Evaluate the technical exception
+            var decision = expert.Evaluate(ex);
+
+            // 4. Execute the architectural exception policy
+            switch (decision.Action)
+            {
+                case DiagnosticAction.Retry:
+                    // If using Polly, you might trigger a retry state here. 
+                    // For now, we bubble up the semantic exception to be caught by a higher-level retry policy.
+                    throw decision.SemanticException ?? ex;
+
+                case DiagnosticAction.FailSafe:
+                    // Safely terminate and bubble up the sanitized domain exception (e.g., to the API layer)
+                    throw decision.SemanticException ?? new Exception("Safe termination triggered.");
+
+                case DiagnosticAction.TerminateSystem:
+                    // Catastrophic failure (e.g., ONNX unmanaged memory corruption leaking into the heap)
+                    Environment.FailFast("Catastrophic failure in unmanaged resources.", ex);
+                    break;
+            }
+        }
+
+        private string DetermineRiskCommunity(Type targetType)
+        {
+            // Example logic: Map the service to its risk community
+            if (targetType.Name.Contains("Orchestrator") || targetType.Name.Contains("TrendAnalysis"))
+                return "NlpCommunity";
+
+            return "DefaultCommunity";
+        }
+    }
+}

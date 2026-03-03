@@ -2,10 +2,15 @@ using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Infrastructure.Repositories;
 using FinancialStatisticsAdminiculum.Infrastructure.Persistence;
 using FinancialStatisticsAdminiculum.Infrastructure.AI;
+using FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling;
 using FinancialStatisticsAdminiculum.Application.AI;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Application.Services;
+using FinancialStatisticsAdminiculum.Application.Interfaces;
+using FinancialStatisticsAdminiculum.Api.Infrastructure;
+using FinancialStatisticsAdminiculum.Api.Extensions;
+using Castle.DynamicProxy;
 
 namespace FinancialStatisticsAdminiculum.Api
 {
@@ -42,11 +47,32 @@ namespace FinancialStatisticsAdminiculum.Api
             // 3. Register your execution handlers
             builder.Services.AddKeyedScoped<IAiToolHandler, SmaToolHandler>(SmaToolHandler.ToolName);
 
-            builder.Services.AddScoped<OrchestratorService>();
-            builder.Services.AddScoped<TrendAnalysisService>();
+            //Register Application Services handled by proxyExtension
+            //builder.Services.AddScoped<OrchestratorService>();
+            //builder.Services.AddScoped<TrendAnalysisService>();
 
             // Register the Database Seeder
             builder.Services.AddScoped<DatabaseSeeder>();
+
+            //Exception Handling
+            // 1. Register the ASP.NET Core Global Exception Handler
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+            builder.Services.AddProblemDetails();
+
+            // 2. Register Castle DynamicProxy Mechanics
+            builder.Services.AddSingleton<ProxyGenerator>();
+            builder.Services.AddTransient<SecurityExceptionInterceptor>();
+
+            // 3. Register the Diagnostic & Repair (D&R) Experts using Keyed DI
+            builder.Services.AddKeyedScoped<IDiagnosticExpert, NlpDiagnosticExpert>("NlpCommunity");
+            // builder.Services.AddKeyedScoped<IDiagnosticExpert, PersistenceDiagnosticExpert>("PersistenceCommunity");
+
+            // 4. Register Proxied Application Services
+            // Assuming you created the ProxyExtensions class we discussed earlier.
+            builder.Services.AddProxiedScoped<IOrchestratorService, OrchestratorService, SecurityExceptionInterceptor>();
+            builder.Services.AddProxiedScoped<ITrendAnalysisService, TrendAnalysisService, SecurityExceptionInterceptor>();
+
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -58,6 +84,8 @@ namespace FinancialStatisticsAdminiculum.Api
                 var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
                 await seeder.SeedAsync();
             }
+
+            app.UseExceptionHandler();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

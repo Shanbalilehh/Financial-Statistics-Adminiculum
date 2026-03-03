@@ -2,11 +2,12 @@
 using FinancialStatisticsAdminiculum.Core.Entities;
 using FinancialStatisticsAdminiculum.Core.Extensions;
 using FinancialStatisticsAdminiculum.Application.DTOs;
+using FinancialStatisticsAdminiculum.Application.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Application.Services
 {
     // Organized by responsibility (matches TrendExtensions)
-    public class TrendAnalysisService
+    public class TrendAnalysisService : ITrendAnalysisService
     {
         private readonly IUnitOfWork _unitOfWork;
 
