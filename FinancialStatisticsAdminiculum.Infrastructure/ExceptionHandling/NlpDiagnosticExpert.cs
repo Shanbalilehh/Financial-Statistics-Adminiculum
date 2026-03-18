@@ -1,8 +1,6 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Exceptions;
-using FinancialStatisticsAdminiculum.Application.Services;
-using Microsoft.SqlServer.Server;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
 {
@@ -10,7 +8,6 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
     {
         public RecoveryDecision Evaluate(Exception technicalException)
         {
-            // Translate infrastructure realities into semantic application rules
             if (technicalException is OnnxRuntimeException onnxEx)
             {
                 if (onnxEx.Message.Contains("timeout") || onnxEx.Message.Contains("busy"))
@@ -27,7 +24,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
                     // Unmanaged memory issue. Do not retry. Kill the process to prevent corruption.
                     return new RecoveryDecision(
                         DiagnosticAction.TerminateSystem,
-                        null
+                        new NlpProcessingException("Fatal error: System terminated.")
                     );
                 }
             }

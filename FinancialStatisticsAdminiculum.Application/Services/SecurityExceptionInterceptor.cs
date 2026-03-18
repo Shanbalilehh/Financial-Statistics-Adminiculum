@@ -32,12 +32,7 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             }
             else if (returnType == typeof(Task))
             {
-                // Correction CS8600 et CS8604 : Vérification de null avant la conversion
-                var task = invocation.ReturnValue as Task;
-                if (task is null)
-                {
-                    throw new InvalidOperationException("La valeur de retour de la méthode est nulle alors qu'un Task était attendu.");
-                }
+                var task = invocation.ReturnValue as Task ?? throw new InvalidOperationException("La valeur de retour de la méthode est nulle alors qu'un Task était attendu.");
                 invocation.ReturnValue = HandleAsync(task, invocation);
             }
         }
@@ -73,13 +68,7 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             string communityKey = DetermineRiskCommunity(invocation.TargetType!);
 
             // 2. Résoudre l'expert D&R spécifique via DI Keyed
-            var expert = _serviceProvider.GetKeyedService<IDiagnosticExpert>(communityKey);
-
-            if (expert == null)
-            {
-                // No expert registered? Bubble up a generic safe failure.
-                throw new InvalidOperationException("Unhandled system failure. No diagnostic expert found.");
-            }
+            var expert = _serviceProvider.GetKeyedService<IDiagnosticExpert>(communityKey) ?? throw new InvalidOperationException("Unhandled system failure. No diagnostic expert found.");
 
             // 3. Evaluate the technical exception
             var decision = expert.Evaluate(ex);
@@ -103,7 +92,7 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             }
         }
 
-        private string DetermineRiskCommunity(Type targetType)
+        private static string DetermineRiskCommunity(Type targetType)
         {
             // Example logic: Map the service to its risk community
             if (targetType.Name.Contains("Orchestrator") || targetType.Name.Contains("TrendAnalysis"))

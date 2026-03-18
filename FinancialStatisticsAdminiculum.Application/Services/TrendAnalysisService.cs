@@ -25,11 +25,11 @@ namespace FinancialStatisticsAdminiculum.Application.Services
                 p.Timestamp <= to);
 
             // Pass to the synchronous method to safely use Spans
-            return ProcessMovingAverage(ticker, rawPoints.ToList(), period);
+            return ProcessMovingAverage(ticker, [.. rawPoints], period);
         }
 
         // 2. The Sync processor (CPU bound, Spans are fully supported here)
-        private TimeSeriesDto ProcessMovingAverage(string ticker, List<PricePoint> rawPoints, int period)
+        private static TimeSeriesDto ProcessMovingAverage(string ticker, List<PricePoint> rawPoints, int period)
         {
             var times = rawPoints.Select(p => p.Timestamp).ToArray();
             var values = rawPoints.Select(p => (double)p.Value).ToArray(); 

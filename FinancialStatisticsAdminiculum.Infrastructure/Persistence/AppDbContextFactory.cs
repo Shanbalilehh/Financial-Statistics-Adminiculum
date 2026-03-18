@@ -19,7 +19,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence
             var builder = new DbContextOptionsBuilder<AppDbContext>();
             var connectionString = configuration.GetConnectionString("LocalConnection");
 
-            builder.UseSqlServer(connectionString);
+            builder.UseNpgsql(connectionString);
 
             return new AppDbContext(builder.Options);
         }
