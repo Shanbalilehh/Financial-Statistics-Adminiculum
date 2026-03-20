@@ -1,6 +1,8 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Exceptions;
+using System;
+using System.Text.RegularExpressions;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
 {
@@ -10,30 +12,40 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
         {
             if (technicalException is OnnxRuntimeException onnxEx)
             {
-                if (onnxEx.Message.Contains("timeout") || onnxEx.Message.Contains("busy"))
-                {
-                    // Transient issue, safe to retry
+                if (IsTransient(onnxEx))
                     return new RecoveryDecision(
                         DiagnosticAction.Retry,
                         new NlpEngineUnavailableException("The local AI model is currently busy. Please try again.")
                     );
-                }
 
-                if (onnxEx.Message.Contains("memory") || onnxEx.Message.Contains("allocation"))
-                {
-                    // Unmanaged memory issue. Do not retry. Kill the process to prevent corruption.
+                if (IsCritical(onnxEx))
                     return new RecoveryDecision(
                         DiagnosticAction.TerminateSystem,
-                        new NlpProcessingException("Fatal error: System terminated.")
+                        new NlpCriticalException("Fatal error System Terminated")
                     );
-                }
             }
 
-            // Default fail-safe for unpredictable AI engine errors- Future implementation
             return new RecoveryDecision(
                 DiagnosticAction.FailSafe,
-                new NlpProcessingException("An unexpected error occurred while analyzing the financial prompt.")
+                new NlpUnexpectedException("An unexpected error occurred while analyzing the financial prompt.")
             );
         }
+
+        private static bool IsTransient(OnnxRuntimeException ex)
+        {
+            var msg = ex.Message;
+            string[] trasientStrings = ["timeout", "busy", "EP_FAIL", "ORT_EP_FAIL"];
+            string pattern = string.Join("|", trasientStrings.Select(Regex.Escape));
+            return Regex.IsMatch(msg, pattern, RegexOptions.Compiled);
+        }
+
+        private static bool IsCritical(OnnxRuntimeException ex)
+        {
+            var msg = ex.Message.AsSpan();
+            string[] criticalStrings = ["memory", "allocation", "ORT_NO_MEMORY", "out of memory"];
+            string pattern = string.Join("|", criticalStrings.Select(Regex.Escape));
+            return Regex.IsMatch(msg, pattern, RegexOptions.Compiled);
+        }
+        
     }
 }

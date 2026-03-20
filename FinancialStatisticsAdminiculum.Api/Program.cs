@@ -59,15 +59,15 @@ namespace FinancialStatisticsAdminiculum.Api
                 string dynamicToolsJson = AiSchemaAggregator.BuildCombinedToolJson();
 
                 // 2. Pass it directly into your Singleton AI Service
-                builder.Services.AddSingleton<INlpEngine>(sp => 
-                    new GemmaOnnxService(@"/home/chi/models/functiongemma_oga", dynamicToolsJson));
+                builder.Services.AddSingleton<INlpEngine>(sp =>
+                new GemmaOnnxService(
+                    @"/home/chi/models/functiongemma_oga",
+                    dynamicToolsJson,
+                    sp.GetRequiredService<ILogger<GemmaOnnxService>>()
+                ));
 
                 // 3. Register your execution handlers
                 builder.Services.AddKeyedScoped<IAiToolHandler, SmaToolHandler>(SmaToolHandler.ToolName);
-
-                //Register Application Services handled by proxyExtension
-                //builder.Services.AddScoped<OrchestratorService>();
-                //builder.Services.AddScoped<TrendAnalysisService>();
 
                 // Register the Database Seeder
                 builder.Services.AddScoped<DatabaseSeeder>();
@@ -83,7 +83,7 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 // 3. Register the Diagnostic & Repair (D&R) Experts using Keyed DI
                 builder.Services.AddKeyedScoped<IDiagnosticExpert, NlpDiagnosticExpert>("NlpCommunity");
-                // builder.Services.AddKeyedScoped<IDiagnosticExpert, PersistenceDiagnosticExpert>("PersistenceCommunity");
+                builder.Services.AddKeyedScoped<IDiagnosticExpert, PersistenceDiagnosticExpert>("PersistenceCommunity");
 
                 // 4. Register Proxied Application Services
                 // Assuming you created the ProxyExtensions class we discussed earlier.

@@ -4,16 +4,19 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace FinancialStatisticsAdminiculum.Application.Services
 {
     public class SecurityExceptionInterceptor : IInterceptor
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<SecurityExceptionInterceptor> _logger;
 
-        public SecurityExceptionInterceptor(IServiceProvider serviceProvider)
+        public SecurityExceptionInterceptor(IServiceProvider serviceProvider, ILogger<SecurityExceptionInterceptor> logger)
         {
             _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         public void Intercept(IInvocation invocation)
@@ -32,7 +35,7 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             }
             else if (returnType == typeof(Task))
             {
-                var task = invocation.ReturnValue as Task ?? throw new InvalidOperationException("La valeur de retour de la méthode est nulle alors qu'un Task était attendu.");
+                var task = invocation.ReturnValue as Task ?? throw new InvalidOperationException("The return value is NULL when a Task was expected.");
                 invocation.ReturnValue = HandleAsync(task, invocation);
             }
         }
@@ -45,6 +48,7 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             }
             catch (Exception ex)
             {
+                _logger.LogDebug("Handling exception: {ex}", ex);
                 HandleException(ex, invocation);
             }
         }
@@ -58,6 +62,7 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             catch (Exception ex)
             {
                 HandleException(ex, invocation);
+                _logger.LogDebug("Handling exception: {ex}", ex);
                 return default!; // Compiler requires this, but execution won't reach here due to the throw.
             }
         }
