@@ -1,18 +1,27 @@
 using Npgsql;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
 {
     public class PersistenceDiagnosticExpert : IDiagnosticExpert
     {
+
+        private readonly ILogger<PersistenceDiagnosticExpert> _logger;
+        public PersistenceDiagnosticExpert(ILogger<PersistenceDiagnosticExpert> logger)
+        {
+            _logger = logger;
+        }
         public RecoveryDecision Evaluate(Exception technicalException)
         {
             if (technicalException is NpgsqlException pgEx)
             {
+                _logger.LogError(pgEx, "Postgres Runtime infrastructure failure: {ErrorMessage}", pgEx.Message);
                 // Transient issues - safe to retry
                 if (IsTransient(pgEx))
                 {
+                    _logger.LogWarning("Postgres Trasient error (Retry)");
                     return new RecoveryDecision(
                         DiagnosticAction.Retry,
                         new PersistenceUnavailableException("The database is temporarily unavailable. Please try again.")
@@ -22,6 +31,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
                 // Data integrity / corruption - do not retry, terminate to prevent further damage
                 if (IsCritical(pgEx))
                 {
+                    _logger.LogCritical("Postgres Critical error (TerminateSystem)");
                     return new RecoveryDecision(
                         DiagnosticAction.TerminateSystem,
                         new PersistenceCriticalException("Fatal error: System Terminated")
@@ -31,6 +41,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
                 // Constraint violations - safe to surface to caller, no retry
                 if (IsConstraintViolation(pgEx))
                 {
+                    _logger.LogWarning("Postgres Constraint Violation error (FailSafe)");
                     return new RecoveryDecision(
                         DiagnosticAction.FailSafe,
                         new PersistenceConstraintException("The operation violates a data integrity rule and could not be completed.")
@@ -39,6 +50,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
             }
 
             // Default fail-safe for unpredictable persistence errors - Future implementation
+            _logger.LogWarning("Postgres Unexpected error (FailSafe)");
             return new RecoveryDecision(
                 DiagnosticAction.FailSafe,
                 new PersistenceUnexpectedException("An unexpected error occurred while accessing the financial data store.")

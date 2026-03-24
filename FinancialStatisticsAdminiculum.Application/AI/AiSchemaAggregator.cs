@@ -1,10 +1,11 @@
 ﻿using System.Reflection;
+using FinancialStatisticsAdminiculum.Application.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Application.AI
 {
-    public static class AiSchemaAggregator
+    public class AiSchemaAggregator : IAiSchemaAggregator
     {
-        public static string BuildCombinedToolJson()
+        public string BuildCombinedToolJson()
         {
             var handlerTypes = Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => !t.IsAbstract && !t.IsInterface && t.IsAssignableTo(typeof(IAiToolHandler)));

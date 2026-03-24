@@ -27,20 +27,17 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Tools
         {
             return """
             {
-                "type": "function",
-                "function": {
-                    "name": "get_moving_average",
-                    "description": "Calculates the Simple Moving Average (SMA)",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "ticker": { "type": "string" },
-                            "from": { "type": "string" },
-                            "to": { "type": "string" },
-                            "period": { "type": "integer" }
-                        },
-                        "required": ["ticker", "from", "to", "period"]
-                    }
+                "name": "get_moving_average",
+                "description": "Calculates the Simple Moving Average (SMA)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "ticker": { "type": "string", "description": "Asset ticker symbol, e.g. XAU for Gold" },
+                        "from": { "type": "string", "description": "Start date in ISO 8601 format" },
+                        "to": { "type": "string", "description": "End date in ISO 8601 format" },
+                        "period": { "type": "integer", "description": "Number of periods for the moving average" }
+                    },
+                    "required": ["ticker", "from", "to", "period"]
                 }
             }
             """;

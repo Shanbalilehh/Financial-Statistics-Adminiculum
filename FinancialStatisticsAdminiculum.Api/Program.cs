@@ -56,14 +56,14 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 //AI Service Registration with Dynamic JSON Schema  
                 // 1. Build the massive JSON string dynamically at startup
-                string dynamicToolsJson = AiSchemaAggregator.BuildCombinedToolJson();
+                //string dynamicToolsJson = AiSchemaAggregator.BuildCombinedToolJson();
+                builder.Services.AddScoped<IAiSchemaAggregator, AiSchemaAggregator>();
 
                 // 2. Pass it directly into your Singleton AI Service
-                builder.Services.AddSingleton<INlpEngine>(sp =>
-                new GemmaOnnxService(
+                builder.Services.AddSingleton(sp =>
+                new GemmaModelFactory(
                     @"/home/chi/models/functiongemma_oga",
-                    dynamicToolsJson,
-                    sp.GetRequiredService<ILogger<GemmaOnnxService>>()
+                    sp.GetRequiredService<ILogger<GemmaModelFactory>>()
                 ));
 
                 // 3. Register your execution handlers
@@ -89,6 +89,7 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Assuming you created the ProxyExtensions class we discussed earlier.
                 builder.Services.AddProxiedScoped<IOrchestratorService, OrchestratorService, SecurityExceptionInterceptor>();
                 builder.Services.AddProxiedScoped<ITrendAnalysisService, TrendAnalysisService, SecurityExceptionInterceptor>();
+                builder.Services.AddProxiedScoped<INlpEngine, GemmaOnnxService, SecurityExceptionInterceptor>();
 
 
                 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
