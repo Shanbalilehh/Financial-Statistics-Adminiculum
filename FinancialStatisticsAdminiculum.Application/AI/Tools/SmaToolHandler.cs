@@ -1,18 +1,10 @@
-﻿using System.Text.Json;
-using FinancialStatisticsAdminiculum.Application.Services;
+﻿using FinancialStatisticsAdminiculum.Application.Services;
+using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
+using FinancialStatisticsAdminiculum.Application.AI.Entities;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Tools
 {
-    // The specific arguments for this tool only
-    public class SmaArguments
-    {
-        public string Ticker { get; set; } = string.Empty;
-        public string From { get; set; } = string.Empty;
-        public string To { get; set; } = string.Empty;
-        public int Period { get; set; }
-    }
-
-    public class SmaToolHandler : IAiToolHandler
+    public class SmaToolHandler : IGemmaTool
     {
         private readonly TrendAnalysisService _trendService;
 
@@ -21,40 +13,62 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Tools
             _trendService = trendService;
         }
 
-        public static string ToolName => "get_moving_average";
-
-        public static string GetToolSchema()
+        public const string ToolName = "get_moving_average"; 
+        public string Name => ToolName;
+        public string Description => "Calculates the Simple Moving Average (SMA)";
+        public Dictionary<string, GemmaParameter> Parameters => new()
         {
-            return """
-            {
-                "name": "get_moving_average",
-                "description": "Calculates the Simple Moving Average (SMA)",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "ticker": { "type": "string", "description": "Asset ticker symbol, e.g. XAU for Gold" },
-                        "from": { "type": "string", "description": "Start date in ISO 8601 format" },
-                        "to": { "type": "string", "description": "End date in ISO 8601 format" },
-                        "period": { "type": "integer", "description": "Number of periods for the moving average" }
-                    },
-                    "required": ["ticker", "from", "to", "period"]
-                }
+            { 
+                "ticker", new GemmaParameter 
+                { 
+                    Type = "STRING", 
+                    Description = "Asset ticker symbol, e.g. XAU for Gold",
+                } 
+            },
+            { 
+                "from", new GemmaParameter 
+                { 
+                    Type = "STRING", 
+                    Description = "Start date in ISO 8601 format" 
+                } 
+            },
+            { 
+                "to", new GemmaParameter 
+                { 
+                    Type = "STRING", 
+                    Description = "End date in ISO 8601 format" 
+                } 
+            },
+            { 
+                "period", new GemmaParameter 
+                { 
+                    Type = "INTEGER", 
+                    Description = "Number of periods for the moving average" 
+                } 
             }
-            """;
-        }
+        };
 
-        public async Task<string> ExecuteAsync(JsonElement arguments)
+        public async Task<string> ExecuteAsync(Dictionary<string, string> arguments)
         {
-            // 1. Deserialize the generic element into our specific arguments
-            var args = arguments.Deserialize<SmaArguments>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            
-            if (args == null) return "Error: Invalid arguments provided.";
+            if (!arguments.TryGetValue("ticker", out var ticker) || string.IsNullOrWhiteSpace(ticker))
+                return "Error: Missing or empty 'ticker' argument.";
 
-            DateTime fromDate = DateTime.Parse(args.From);
-            DateTime toDate = DateTime.Parse(args.To);
+            if (!arguments.TryGetValue("from", out var fromRaw) || !DateTime.TryParse(fromRaw, out var fromDate))
+                return "Error: Missing or invalid 'from' date.";
 
-            // 2. Execute the math
-            var result = await _trendService.GetMovingAverageAsync(args.Ticker, fromDate, toDate, args.Period);
+            if (!arguments.TryGetValue("to", out var toRaw) || !DateTime.TryParse(toRaw, out var toDate))
+                return "Error: Missing or invalid 'to' date.";
+
+            if (!arguments.TryGetValue("period", out var periodRaw) || !int.TryParse(periodRaw, out var period) || period <= 0)
+                return "Error: Missing or invalid 'period' argument. Expected a positive integer.";
+
+            if (fromDate >= toDate)
+                return "Error: 'from' date must be earlier than 'to' date.";
+
+            var result = await _trendService.GetMovingAverageAsync(ticker, fromDate, toDate, period);
+
+            if (result is null)
+                return "Error: No result returned from the moving average service.";
 
             return $"Successfully calculated {result.IndicatorName} for {result.Ticker}. Points generated: {result.Data.Count}";
         }

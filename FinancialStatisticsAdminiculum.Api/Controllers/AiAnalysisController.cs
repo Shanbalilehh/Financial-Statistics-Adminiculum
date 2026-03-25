@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using FinancialStatisticsAdminiculum.Application.AI;
+using FinancialStatisticsAdminiculum.Application.AI.Services;
 
 namespace FinancialStatisticsAdminiculum.API.Controllers
 {
@@ -32,7 +32,7 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
                 return BadRequest(new { Error = "The prompt cannot be empty." });
             // This single line triggers the entire pipeline:
             // Gemma -> JSON -> Tool Strategy -> Database Repo -> Math Extensions
-            string result = await _orchestratorService.ExecuteAiCommandAsync(request.Prompt);
+            string result = await _orchestratorService.ParseAndExecuteToolsAsync(request.Prompt);
             
             return Ok(new { Message = result });
         }

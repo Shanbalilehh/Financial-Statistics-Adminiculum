@@ -1,9 +1,10 @@
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Infrastructure.Repositories;
 using FinancialStatisticsAdminiculum.Infrastructure.Persistence;
-using FinancialStatisticsAdminiculum.Infrastructure.AI;
+using FinancialStatisticsAdminiculum.Application.AI.Services;
 using FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling;
-using FinancialStatisticsAdminiculum.Application.AI;
+using FinancialStatisticsAdminiculum.Infrastructure.AI.Interfaces;
+using FinancialStatisticsAdminiculum.Infrastructure.AI.Services;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Application.Services;
@@ -13,6 +14,7 @@ using FinancialStatisticsAdminiculum.Api.Extensions;
 using Castle.DynamicProxy;
 using Serilog;
 using Serilog.Formatting.Compact;
+using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Api
 {
@@ -54,12 +56,13 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Register Unit of Work
                 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+                // Register FunctionGemmaParser
+                builder.Services.AddSingleton<IFunctionGemmaParser, FunctionGemmaParser>();
+
                 //AI Service Registration with Dynamic JSON Schema  
-                // 1. Build the massive JSON string dynamically at startup
-                //string dynamicToolsJson = AiSchemaAggregator.BuildCombinedToolJson();
                 builder.Services.AddScoped<IAiSchemaAggregator, AiSchemaAggregator>();
 
-                // 2. Pass it directly into your Singleton AI Service
+                // Model Singleton registration
                 builder.Services.AddSingleton(sp =>
                 new GemmaModelFactory(
                     @"/home/chi/models/functiongemma_oga",
@@ -67,7 +70,7 @@ namespace FinancialStatisticsAdminiculum.Api
                 ));
 
                 // 3. Register your execution handlers
-                builder.Services.AddKeyedScoped<IAiToolHandler, SmaToolHandler>(SmaToolHandler.ToolName);
+                builder.Services.AddKeyedScoped<IGemmaTool, SmaToolHandler>(SmaToolHandler.ToolName);
 
                 // Register the Database Seeder
                 builder.Services.AddScoped<DatabaseSeeder>();
@@ -89,7 +92,7 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Assuming you created the ProxyExtensions class we discussed earlier.
                 builder.Services.AddProxiedScoped<IOrchestratorService, OrchestratorService, SecurityExceptionInterceptor>();
                 builder.Services.AddProxiedScoped<ITrendAnalysisService, TrendAnalysisService, SecurityExceptionInterceptor>();
-                builder.Services.AddProxiedScoped<INlpEngine, GemmaOnnxService, SecurityExceptionInterceptor>();
+                builder.Services.AddProxiedScoped<IGemmaOnnxService, GemmaOnnxService, SecurityExceptionInterceptor>();
 
 
                 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -115,8 +118,14 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 app.UseHttpsRedirection();
 
-                app.UseAuthorization();
+                app.UseSerilogRequestLogging(options =>
+                {
+                    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+                });
 
+                app.UseRouting();
+
+                app.UseAuthorization();
 
                 app.MapControllers();
 

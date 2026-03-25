@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FinancialStatisticsAdminiculum.Application.AI.Services;
 
 namespace FinancialStatisticsAdminiculum.Application.Interfaces
 {
-    public class IOrchestratorService
+    public interface IOrchestratorService
     {
+        Task<string> ParseAndExecuteToolsAsync(string rawModelOutput);
     }
 }
