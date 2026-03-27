@@ -7,7 +7,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Interfaces
         string Name {get;}
         string Description { get; }
         Dictionary<string, GemmaParameter> Parameters { get; } 
-        Task<string> ExecuteAsync(Dictionary<string, string> arguments);
+        Task<ToolExecutionResult> ExecuteAsync(Dictionary<string, string> args);
     }
     
 }

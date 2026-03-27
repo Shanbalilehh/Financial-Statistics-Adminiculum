@@ -1,5 +1,6 @@
 using System.Text;
 using FinancialStatisticsAdminiculum.Infrastructure.AI.Entities;
+using FinancialStatisticsAdminiculum.Core.Entities;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
 {

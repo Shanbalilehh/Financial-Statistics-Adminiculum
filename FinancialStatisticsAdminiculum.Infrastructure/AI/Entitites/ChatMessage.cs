@@ -1,15 +1,8 @@
 using FinancialStatisticsAdminiculum.Application.AI.Entities;
+using FinancialStatisticsAdminiculum.Core.Entities;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Entities
 {
-    public enum ChatRole
-    {
-        Developer,
-        User,
-        Model,
-        Tool
-    }
-
     public class ChatMessage
     {
         public required ChatRole Role { get; set; }

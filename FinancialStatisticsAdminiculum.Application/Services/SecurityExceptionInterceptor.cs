@@ -1,5 +1,4 @@
 ﻿using Castle.DynamicProxy;
-using Castle.Core.Internal; 
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using FinancialStatisticsAdminiculum.Core.Interfaces;

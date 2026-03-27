@@ -3,7 +3,6 @@ using FinancialStatisticsAdminiculum.Infrastructure.Repositories;
 using FinancialStatisticsAdminiculum.Infrastructure.Persistence;
 using FinancialStatisticsAdminiculum.Application.AI.Services;
 using FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling;
-using FinancialStatisticsAdminiculum.Infrastructure.AI.Interfaces;
 using FinancialStatisticsAdminiculum.Infrastructure.AI.Services;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using Microsoft.EntityFrameworkCore;
@@ -22,13 +21,16 @@ namespace FinancialStatisticsAdminiculum.Api
     {
         public static async Task Main(string[] args)
         {
+            // Create a Logger Configuration
             Log.Logger = new LoggerConfiguration()
+                // Initialize the logs Hierarchy 
                 .MinimumLevel.Debug()
-                .Enrich.FromLogContext()                         // picks up LogContext.PushProperty(...)
+                // Enrich: add specifications to events
+                .Enrich.FromLogContext()                         
                 .Enrich.WithMachineName()
                 .Enrich.WithThreadId()
-                .WriteTo.Console(new CompactJsonFormatter())     // structured JSON to stdout
-                .WriteTo.File(
+                .WriteTo.Console(new CompactJsonFormatter())     // Sink: structured JSON to stdout
+                .WriteTo.File(                                   // Sink: Write structured JSON logs to File
                     new CompactJsonFormatter(),
                     path: "logs/fsa-.log",
                     rollingInterval: RollingInterval.Day,
@@ -37,14 +39,17 @@ namespace FinancialStatisticsAdminiculum.Api
                 .CreateLogger();
             try
             {
+                // uses ASP.NET Core WebApplication to create a services environment(IServiceCollection) with preconfigured defaults
                 var builder = WebApplication.CreateBuilder(args);
+
+                // Sets Serilog as logging provider
                 builder.Host.UseSerilog();
 
-                //Connection string appsetting.json
+                // Connection string appsetting.json
                 var connectionString = builder.Configuration.GetConnectionString("LocalConnection");
-                // Add services to the container.
 
-                //Dbcontext
+                // Add services to the container.
+                // Add Dbcontext service
                 builder.Services.AddDbContext<AppDbContext>(options =>
                     options.UseNpgsql(connectionString));
                 builder.Services.AddControllers();
@@ -59,6 +64,9 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Register FunctionGemmaParser
                 builder.Services.AddSingleton<IFunctionGemmaParser, FunctionGemmaParser>();
 
+                // Register ToolResolver
+                builder.Services.AddScoped<IToolResolver, ToolResolver>();
+
                 //AI Service Registration with Dynamic JSON Schema  
                 builder.Services.AddScoped<IAiSchemaAggregator, AiSchemaAggregator>();
 
@@ -69,7 +77,7 @@ namespace FinancialStatisticsAdminiculum.Api
                     sp.GetRequiredService<ILogger<GemmaModelFactory>>()
                 ));
 
-                // 3. Register your execution handlers
+                // Register execution tool handlers
                 builder.Services.AddKeyedScoped<IGemmaTool, SmaToolHandler>(SmaToolHandler.ToolName);
 
                 // Register the Database Seeder
@@ -101,6 +109,7 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 var app = builder.Build();
 
+                // Resolve Seeder
                 using (var scope = app.Services.CreateScope())
                 {
                     var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
@@ -116,13 +125,16 @@ namespace FinancialStatisticsAdminiculum.Api
                     app.UseSwaggerUI();
                 }
 
+                // Redirects Http requests to Https
                 app.UseHttpsRedirection();
 
+                // Request Serilog Logging with options
                 app.UseSerilogRequestLogging(options =>
                 {
                     options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
                 });
 
+                // Add Routing
                 app.UseRouting();
 
                 app.UseAuthorization();

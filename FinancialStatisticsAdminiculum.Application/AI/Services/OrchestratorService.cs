@@ -1,76 +1,117 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SerilogTimings;
 using Serilog.Events;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
+using FinancialStatisticsAdminiculum.Core.Interfaces;
+using FinancialStatisticsAdminiculum.Core.Entities;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Services
 {
     public class OrchestratorService : IOrchestratorService
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IToolResolver _resolver;
         private readonly ILogger<OrchestratorService> _logger;
-        private readonly IFunctionGemmaParser _parser; 
+        private readonly IFunctionGemmaParser _parser;
+        private readonly IGemmaOnnxService _gemmaService;
 
-        // 1. We remove INlpEngine from here to prevent circular dependencies, 
-        // because GemmaOnnxService will be calling THIS service.
         public OrchestratorService(
-            IServiceProvider serviceProvider, 
+            IToolResolver resolver,
             ILogger<OrchestratorService> logger,
-            IFunctionGemmaParser parser)
+            IFunctionGemmaParser parser,
+            IGemmaOnnxService gemmaService)
         {
-            _serviceProvider = serviceProvider;
+            _resolver = resolver;
             _logger = logger;
             _parser = parser;
+            _gemmaService = gemmaService;
         }
 
-        // 2. Renamed to reflect that it receives the RAW text from the model
-        public async Task<string> ParseAndExecuteToolsAsync(string rawModelOutput)
+        public async Task<string> HandleUserMessageAsync(string userPrompt)
         {
-            using var op = Operation.At(LogEventLevel.Information).Begin("Parsing and Executing AI Tools");
+            _logger.LogInformation("Handling user message: {PromptLength} chars", userPrompt.Length);
 
-            // 3. Use our high-performance Span parser instead of JSON
-            var toolCalls = _parser.ParseToolCalls(rawModelOutput);
+            using var op = Operation.At(LogEventLevel.Information).Begin("Handling user message");
+
+            // First generation pass: user prompt → raw model output
+            string modelOutput = await _gemmaService.GenerateAsync(ChatRole.User, userPrompt);
+
+            // Attempt to parse tool calls from the raw output
+            var toolCalls = _parser.ParseToolCalls(modelOutput);
 
             if (toolCalls.Count == 0)
             {
-                _logger.LogWarning("Could not parse AI intent from output: {Output}", rawModelOutput);
-                return string.Empty; // Return empty to signal no tools were executed
+                _logger.LogDebug("No tool calls detected. Returning direct model response.");
+                op.Complete();
+                return modelOutput;
             }
 
-            var results = new List<string>();
+            // Execute each tool and collect formatted responses
+            var toolResults = new List<string>();
 
-            // 4. Handle multiple tool requests if the model asks for them
             foreach (var call in toolCalls)
             {
-                var handler = _serviceProvider.GetKeyedService<IGemmaTool>(call.Name);
+                _logger.LogInformation("Executing tool {ToolName} with args {@Args}", call.Name, call.Arguments);
+
+                using var toolOp = Operation.Time($"Executing tool {call.Name}");
+                var handler = _resolver.Resolve(call.Name);
 
                 if (handler == null)
                 {
                     _logger.LogWarning("Tool '{ToolName}' is not implemented.", call.Name);
+                    toolResults.Add($"<start_function_response>response:{call.Name}{{Error: Tool not implemented}}<end_function_response>");
+                    continue;
+                }
+
+                var toolResult = await handler.ExecuteAsync(call.Arguments);
+
+                if (toolResult.IsSuccess)
+                {
+                    toolResults.Add($"<start_function_response>response:{call.Name}{{{toolResult}}}<end_function_response>");
+                }
+                else
+                {
+                    _logger.LogError("Error executing tool '{ToolName}'", call.Name);
+                    toolResults.Add($"<start_function_response>response:{call.Name}{{Error: Internal execution failure}}<end_function_response>");
+                }
+            }
+
+            // Second generation pass: feed tool results back, get final response
+            string combinedToolResults = string.Join("", toolResults);
+            _logger.LogInformation("Tools executed. Generating final response with tool context.");
+
+            string finalOutput = await _gemmaService.GenerateAsync(ChatRole.Tool, combinedToolResults);
+
+            op.Complete();
+            return finalOutput;
+        }
+
+        // Kept for internal/diagnostic use if needed
+        public async Task<string> ParseAndExecuteToolsAsync(string rawModelOutput)
+        {
+            var toolCalls = _parser.ParseToolCalls(rawModelOutput);
+
+            if (toolCalls.Count == 0)
+                return string.Empty;
+
+            var results = new List<string>();
+
+            foreach (var call in toolCalls)
+            {
+                var handler = _resolver.Resolve(call.Name);
+
+                if (handler == null)
+                {
                     results.Add($"<start_function_response>response:{call.Name}{{Error: Tool not implemented}}<end_function_response>");
                     continue;
                 }
 
-                try
-                {
-                    // Execute the tool using the parsed dictionary
-                    string toolResult = await handler.ExecuteAsync(call.Arguments);
-                    
-                    // Format the result EXACTLY how FunctionGemma expects it back
-                    results.Add($"<start_function_response>response:{call.Name}{{{toolResult}}}<end_function_response>");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error executing tool '{ToolName}'", call.Name);
-                    results.Add($"<start_function_response>response:{call.Name}{{Error: Internal execution failure}}<end_function_response>");
-                }
+                var toolResult = await handler.ExecuteAsync(call.Arguments);
+                results.Add(toolResult.IsSuccess
+                    ? $"<start_function_response>response:{call.Name}{{{toolResult}}}<end_function_response>"
+                    : $"<start_function_response>response:{call.Name}{{Error: Internal execution failure}}<end_function_response>");
             }
 
-            op.Complete();
-            
-            // 5. Combine all formatted responses into one string for the history
             return string.Join("", results);
         }
     }
