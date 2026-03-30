@@ -67,9 +67,6 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Register ToolResolver
                 builder.Services.AddScoped<IToolResolver, ToolResolver>();
 
-                //AI Service Registration with Dynamic JSON Schema  
-                builder.Services.AddScoped<IAiSchemaAggregator, AiSchemaAggregator>();
-
                 // Model Singleton registration
                 builder.Services.AddSingleton(sp =>
                 new GemmaModelFactory(
@@ -78,7 +75,11 @@ namespace FinancialStatisticsAdminiculum.Api
                 ));
 
                 // Register execution tool handlers
+                builder.Services.AddScoped<IGemmaTool, SmaToolHandler>();
                 builder.Services.AddKeyedScoped<IGemmaTool, SmaToolHandler>(SmaToolHandler.ToolName);
+
+                //AI Service Registration with Dynamic JSON Schema  
+                builder.Services.AddScoped<IAiSchemaAggregator, AiSchemaAggregator>();
 
                 // Register the Database Seeder
                 builder.Services.AddScoped<DatabaseSeeder>();

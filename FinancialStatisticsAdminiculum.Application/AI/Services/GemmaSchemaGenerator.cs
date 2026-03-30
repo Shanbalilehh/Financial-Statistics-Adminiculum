@@ -3,7 +3,7 @@ using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Services
 {
-    //Objetive: Generate Tools Schema from objects
+    //Objective: Generate Tools Schema from objects
     public static class GemmaSchemaGenerator
     {
         public static string GenerateDeclaration(IGemmaTool tool)

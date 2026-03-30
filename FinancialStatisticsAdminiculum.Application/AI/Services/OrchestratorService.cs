@@ -85,34 +85,5 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             op.Complete();
             return finalOutput;
         }
-
-        // Kept for internal/diagnostic use if needed
-        public async Task<string> ParseAndExecuteToolsAsync(string rawModelOutput)
-        {
-            var toolCalls = _parser.ParseToolCalls(rawModelOutput);
-
-            if (toolCalls.Count == 0)
-                return string.Empty;
-
-            var results = new List<string>();
-
-            foreach (var call in toolCalls)
-            {
-                var handler = _resolver.Resolve(call.Name);
-
-                if (handler == null)
-                {
-                    results.Add($"<start_function_response>response:{call.Name}{{Error: Tool not implemented}}<end_function_response>");
-                    continue;
-                }
-
-                var toolResult = await handler.ExecuteAsync(call.Arguments);
-                results.Add(toolResult.IsSuccess
-                    ? $"<start_function_response>response:{call.Name}{{{toolResult}}}<end_function_response>"
-                    : $"<start_function_response>response:{call.Name}{{Error: Internal execution failure}}<end_function_response>");
-            }
-
-            return string.Join("", results);
-        }
     }
 }

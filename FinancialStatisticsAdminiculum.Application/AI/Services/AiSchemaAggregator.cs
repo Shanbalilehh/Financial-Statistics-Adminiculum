@@ -1,6 +1,7 @@
 ﻿using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Services
 {
@@ -8,21 +9,27 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
     public class AiSchemaAggregator : IAiSchemaAggregator
     {
         private readonly IEnumerable<IGemmaTool> _availableTools;
+        private readonly ILogger<AiSchemaAggregator> _logger;
 
-        public AiSchemaAggregator(IEnumerable<IGemmaTool> availableTools)
+        public AiSchemaAggregator(IEnumerable<IGemmaTool> availableTools, ILogger<AiSchemaAggregator> logger)
         {
             _availableTools = availableTools;
+            _logger = logger;
         }
 
         public string BuildCombinedTool()
         {
             var sb = new StringBuilder();
             sb.AppendLine("You are a model that can do function calling with the following functions");
+            _logger.LogDebug("AiSchemaAggregator has {Count} tools: {Names}",
+                _availableTools.Count(),
+                string.Join(", ", _availableTools.Select(t => t.GetType().Name)));
             
             foreach (var tool in _availableTools)
             {
                 // Using the custom formatter we built in the previous step!
                 sb.Append(GemmaSchemaGenerator.GenerateDeclaration(tool));
+                _logger.LogInformation("Generated Schema: {Schema}", GemmaSchemaGenerator.GenerateDeclaration(tool));
             }
             
             return sb.ToString();

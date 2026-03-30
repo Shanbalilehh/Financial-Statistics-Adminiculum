@@ -50,7 +50,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
             }
 
             // Default fail-safe for unpredictable persistence errors - Future implementation
-            _logger.LogWarning("Postgres Unexpected error (FailSafe)");
+            _logger.LogWarning("Db: Unexpected error (FailSafe): {ex}", technicalException);
             return new RecoveryDecision(
                 DiagnosticAction.FailSafe,
                 new PersistenceUnexpectedException("An unexpected error occurred while accessing the financial data store.")

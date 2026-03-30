@@ -1,14 +1,14 @@
-﻿using FinancialStatisticsAdminiculum.Application.Services;
-using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
+﻿using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Entities;
+using FinancialStatisticsAdminiculum.Application.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Tools
 {
     public class SmaToolHandler : IGemmaTool
     {
-        private readonly TrendAnalysisService _trendService;
+        private readonly ITrendAnalysisService _trendService;
 
-        public SmaToolHandler(TrendAnalysisService trendService)
+        public SmaToolHandler(ITrendAnalysisService trendService)
         {
             _trendService = trendService;
         }
@@ -53,14 +53,20 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Tools
             if (!arguments.TryGetValue("ticker", out var ticker) || string.IsNullOrWhiteSpace(ticker))
                 return ToolExecutionResult.Failure("Error: Missing or empty 'ticker' argument.");
 
-            if (!arguments.TryGetValue("from", out var fromRaw) || !DateTime.TryParse(fromRaw, out var fromDate))
+            // 1. Parse 'from' and specify UTC kind
+            if (!arguments.TryGetValue("from", out var fromRaw) || !DateTime.TryParse(fromRaw, out var fromParsed))
                 return ToolExecutionResult.Failure("Error: Missing or invalid 'from' date.");
+            
+            var fromDate = DateTime.SpecifyKind(fromParsed, DateTimeKind.Utc);
 
-            if (!arguments.TryGetValue("to", out var toRaw) || !DateTime.TryParse(toRaw, out var toDate))
+            // 2. Parse 'to' and specify UTC kind
+            if (!arguments.TryGetValue("to", out var toRaw) || !DateTime.TryParse(toRaw, out var toParsed))
                 return ToolExecutionResult.Failure("Error: Missing or invalid 'to' date.");
+            
+            var toDate = DateTime.SpecifyKind(toParsed, DateTimeKind.Utc);
 
             if (!arguments.TryGetValue("period", out var periodRaw) || !int.TryParse(periodRaw, out var period) || period <= 0)
-                return ToolExecutionResult.Failure("Error: Missing or invalid 'period' argument. Expected a positive integer.");
+                return ToolExecutionResult.Failure("Error: Missing or invalid 'period' argument.");
 
             if (fromDate >= toDate)
                 return ToolExecutionResult.Failure("Error: 'from' date must be earlier than 'to' date.");

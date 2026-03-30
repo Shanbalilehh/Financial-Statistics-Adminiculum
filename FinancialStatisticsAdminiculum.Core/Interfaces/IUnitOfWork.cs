@@ -1,7 +1,9 @@
 ﻿using FinancialStatisticsAdminiculum.Core.Entities;
+using FinancialStatisticsAdminiculum.Core.Exceptions;
 
 namespace FinancialStatisticsAdminiculum.Core.Interfaces
 {
+    [RiskCommunity("PersistenceCommunity")]
     public interface IUnitOfWork : IDisposable
     {
         // Expose your specific repositories here

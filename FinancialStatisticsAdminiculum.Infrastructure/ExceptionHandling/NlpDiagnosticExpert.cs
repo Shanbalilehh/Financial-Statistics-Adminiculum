@@ -38,7 +38,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling
                 }
             }
 
-            _logger.LogCritical("ONNX Unexpected error (FailSafe)");
+            _logger.LogCritical("Nlp: Unexpected error (FailSafe): {ex}", technicalException);
             return new RecoveryDecision(
                 DiagnosticAction.FailSafe,
                 new NlpUnexpectedException("An unexpected error occurred while analyzing the financial prompt.")

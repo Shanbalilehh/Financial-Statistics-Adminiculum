@@ -1,7 +1,9 @@
 ﻿using System.Linq.Expressions;
+using FinancialStatisticsAdminiculum.Core.Exceptions;
 
 namespace FinancialStatisticsAdminiculum.Core.Interfaces
 {
+    [RiskCommunity("PersistenceCommunity")]
     public interface IRepository<T> where T : class
     {
         // 1. Get by ID
