@@ -1,5 +1,6 @@
 ﻿using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Entities;
+using FinancialStatisticsAdminiculum.Application.AI.SchemaGenerators;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Tools
@@ -72,11 +73,12 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Tools
                 return ToolExecutionResult.Failure("Error: 'from' date must be earlier than 'to' date.");
 
             var result = await _trendService.GetMovingAverageAsync(ticker, fromDate, toDate, period);
+            string formattedResult = GemmaTimeSeriesResponseGenerator.GenerateResponse(ToolName, result);
 
             if (result is null)
                 return ToolExecutionResult.Failure("Error: No result returned from the moving average service.");
 
-            return ToolExecutionResult.Success($"Successfully calculated {result.IndicatorName} for {result.Ticker}. Points generated: {result.Data.Count}");
+            return ToolExecutionResult.Success(formattedResult);
         }
     }
 }

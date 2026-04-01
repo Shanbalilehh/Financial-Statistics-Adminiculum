@@ -36,6 +36,8 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             // First generation pass: user prompt → raw model output
             string modelOutput = await _gemmaService.GenerateAsync(ChatRole.User, userPrompt);
 
+            _logger.LogDebug("First model generation: {output}", modelOutput);
+
             // Attempt to parse tool calls from the raw output
             var toolCalls = _parser.ParseToolCalls(modelOutput);
 
@@ -63,11 +65,13 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
                     continue;
                 }
 
-                var toolResult = await handler.ExecuteAsync(call.Arguments);
+                var toolExecutionResult = await handler.ExecuteAsync(call.Arguments);
+                var toolResult = toolExecutionResult.Payload;
+                _logger.LogDebug("Tool Result: {output}", toolResult);
 
-                if (toolResult.IsSuccess)
+                if (toolExecutionResult.IsSuccess)
                 {
-                    toolResults.Add($"<start_function_response>response:{call.Name}{{{toolResult}}}<end_function_response>");
+                    toolResults.Add(toolResult);
                 }
                 else
                 {
@@ -78,9 +82,11 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
 
             // Second generation pass: feed tool results back, get final response
             string combinedToolResults = string.Join("", toolResults);
+            _logger.LogDebug("Second model generation: {output}", combinedToolResults);
             _logger.LogInformation("Tools executed. Generating final response with tool context.");
 
             string finalOutput = await _gemmaService.GenerateAsync(ChatRole.Tool, combinedToolResults);
+            _logger.LogDebug("Final output: {output}", finalOutput);
 
             op.Complete();
             return finalOutput;

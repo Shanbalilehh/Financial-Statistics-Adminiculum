@@ -3,7 +3,7 @@ using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace FinancialStatisticsAdminiculum.Application.AI.Services
+namespace FinancialStatisticsAdminiculum.Application.AI.SchemaGenerators
 {
     //Objective: Tools Schemas ready for passing to model (developer)
     public class AiSchemaAggregator : IAiSchemaAggregator
@@ -27,7 +27,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             
             foreach (var tool in _availableTools)
             {
-                // Using the custom formatter we built in the previous step!
+                // FunctionGemma specific custom formatter.
                 sb.Append(GemmaSchemaGenerator.GenerateDeclaration(tool));
                 _logger.LogInformation("Generated Schema: {Schema}", GemmaSchemaGenerator.GenerateDeclaration(tool));
             }

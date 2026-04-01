@@ -1,7 +1,7 @@
 using FinancialStatisticsAdminiculum.Application.AI.Entities;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
 
-namespace FinancialStatisticsAdminiculum.Application.AI.Services
+namespace FinancialStatisticsAdminiculum.Application.AI.Parsers
 {
     public class FunctionGemmaParser : IFunctionGemmaParser
     {

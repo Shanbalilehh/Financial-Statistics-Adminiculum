@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using FinancialStatisticsAdminiculum.Application.AI.Services;
+using FinancialStatisticsAdminiculum.Application.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.API.Controllers
 {
@@ -11,10 +11,10 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
     // 2. Inherit from base class
     public class AiAnalysisController : ControllerBase
     {
-        private readonly OrchestratorService _orchestratorService;
+        private readonly IOrchestratorService _orchestratorService;
 
         // 3. Constructor DI
-        public AiAnalysisController(OrchestratorService orchestratorService)
+        public AiAnalysisController(IOrchestratorService orchestratorService)
         {
             _orchestratorService = orchestratorService;
         }

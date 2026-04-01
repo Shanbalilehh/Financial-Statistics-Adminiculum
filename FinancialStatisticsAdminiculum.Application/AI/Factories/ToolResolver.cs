@@ -1,7 +1,7 @@
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FinancialStatisticsAdminiculum.Application.AI.Services
+namespace FinancialStatisticsAdminiculum.Application.AI.Factories
 {
     public class ToolResolver : IToolResolver
     {
