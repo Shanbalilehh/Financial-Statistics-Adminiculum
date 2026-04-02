@@ -40,6 +40,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence
             DateTime currentDate = DateTime.UtcNow.AddDays(-140); // Go back far enough to get 100 weekdays
 
             int tradingDaysGenerated = 0;
+            var generatedPricePoints = new List<PricePoint>(capacity: 100);
 
             while (tradingDaysGenerated < 100)
             {
@@ -49,9 +50,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence
                     currentDate = currentDate.AddDays(1);
                     continue;
                 }
-
-                var pricePoint = new PricePoint("XAU", currentDate, currentPrice);
-                await _context.PricePoints.AddAsync(pricePoint);
+                generatedPricePoints.Add(new PricePoint("XAU", currentDate, currentPrice));
 
                 // Randomly alter the price between -1.5% and +1.5% daily
                 decimal percentageChange = (decimal)(random.NextDouble() * 0.03 - 0.015);
@@ -61,7 +60,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence
                 tradingDaysGenerated++;
             }
 
-            await _context.SaveChangesAsync();
+            await _context.PricePoints.AddRangeAsync(generatedPricePoints);
         }
     }
 }

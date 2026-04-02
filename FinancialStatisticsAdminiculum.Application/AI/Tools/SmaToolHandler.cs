@@ -49,7 +49,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Tools
             }
         };
 
-        public async Task<ToolExecutionResult> ExecuteAsync(Dictionary<string, string> arguments)
+        public async Task<ToolExecutionResult> ExecuteAsync(Dictionary<string, string> arguments, CancellationToken ct = default)
         {
             if (!arguments.TryGetValue("ticker", out var ticker) || string.IsNullOrWhiteSpace(ticker))
                 return ToolExecutionResult.Failure("Error: Missing or empty 'ticker' argument.");

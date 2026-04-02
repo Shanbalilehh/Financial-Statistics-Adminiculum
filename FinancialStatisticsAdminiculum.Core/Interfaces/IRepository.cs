@@ -21,8 +21,5 @@ namespace FinancialStatisticsAdminiculum.Core.Interfaces
         
         // 5. Deletes
         void Remove(T entity);
-        
-        // 6. Save Changes (Unit of Work pattern usually handles this, but good to have)
-        Task SaveChangesAsync();
     }
 }

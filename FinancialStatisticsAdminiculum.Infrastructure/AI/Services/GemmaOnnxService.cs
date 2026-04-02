@@ -37,18 +37,18 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
             _chatHistory.Add(new ChatMessage { Role = ChatRole.Developer, Content = developerContent });
         }
 
-        public async Task<string> GenerateAsync(ChatRole role, string content)
+        public async Task<string> GenerateAsync(ChatRole role, string content, CancellationToken ct = default)
         {
             _chatHistory.Add(new ChatMessage { Role = role, Content = content });
 
             string promptString = GemmaPromptFormatter.BuildPrompt(_chatHistory);
-            string modelOutput = await GenerateTokensAsync(promptString);
+            string modelOutput = await GenerateTokensAsync(promptString, ct);
 
             _chatHistory.Add(new ChatMessage { Role = ChatRole.Model, Content = modelOutput });
             return modelOutput;
         }
 
-        private async Task<string> GenerateTokensAsync(string fullPrompt)
+        private async Task<string> GenerateTokensAsync(string fullPrompt, CancellationToken ct = default)
         {
             _logger.LogDebug("Starting token generation for prompt length: {Length}", fullPrompt.Length);
 
@@ -68,6 +68,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
 
                 while (!generator.IsDone())
                 {
+                    ct.ThrowIfCancellationRequested();
                     generator.GenerateNextToken();
                     var newTokenId = generator.GetSequence(0)[^1];
                     sb.Append(tokenizerStream.Decode(newTokenId));
@@ -76,7 +77,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
                 string result = sb.ToString();
                 _logger.LogDebug("Generation complete. Produced {CharCount} chars.", result.Length);
                 return result;
-            });
+            }, ct);
         }
     }
 }

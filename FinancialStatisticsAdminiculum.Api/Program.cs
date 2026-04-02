@@ -15,7 +15,6 @@ using FinancialStatisticsAdminiculum.Api.Infrastructure;
 using FinancialStatisticsAdminiculum.Api.Extensions;
 using Castle.DynamicProxy;
 using Serilog;
-using Serilog.Formatting.Compact;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Api
@@ -25,6 +24,7 @@ namespace FinancialStatisticsAdminiculum.Api
         public static async Task Main(string[] args)
         {
             // Create a Logger Configuration
+            /*
             Log.Logger = new LoggerConfiguration()
                 // Initialize the logs Hierarchy 
                 .MinimumLevel.Debug()
@@ -40,21 +40,29 @@ namespace FinancialStatisticsAdminiculum.Api
                     retainedFileCountLimit: 14
                 )
                 .CreateLogger();
+            */
             try
             {
                 // uses ASP.NET Core WebApplication to create a services environment(IServiceCollection) with preconfigured defaults
                 var builder = WebApplication.CreateBuilder(args);
 
+                Console.WriteLine($"Current Environment: {builder.Environment.EnvironmentName}");
+
                 // Sets Serilog as logging provider
-                builder.Host.UseSerilog();
+                builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
 
                 // Connection string appsetting.json
                 var connectionString = builder.Configuration.GetConnectionString("LocalConnection");
+                string modelPath = builder.Configuration.GetValue<string>("Paths:modelPath") ?? throw new InvalidOperationException(
+        "Missing required configuration key 'Paths:modelPath'.");
+
 
                 // Add services to the container.
                 // Add Dbcontext service
                 builder.Services.AddDbContext<AppDbContext>(options =>
-                    options.UseNpgsql(connectionString));
+                    options.UseNpgsql(connectionString, npgsqlOptions =>
+                    npgsqlOptions.MaxBatchSize(128)
+                    ));
                 builder.Services.AddControllers();
 
                 // Register the Generic Repository
@@ -73,7 +81,7 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Model Singleton registration
                 builder.Services.AddSingleton(sp =>
                 new GemmaModelFactory(
-                    @"/home/chi/models/functiongemma_oga",
+                    modelPath,
                     sp.GetRequiredService<ILogger<GemmaModelFactory>>()
                 ));
 

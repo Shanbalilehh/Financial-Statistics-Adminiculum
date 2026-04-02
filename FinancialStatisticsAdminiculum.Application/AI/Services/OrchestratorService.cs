@@ -27,14 +27,14 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             _gemmaService = gemmaService;
         }
 
-        public async Task<string> HandleUserMessageAsync(string userPrompt)
+        public async Task<string> HandleUserMessageAsync(string userPrompt, CancellationToken ct = default)
         {
             _logger.LogInformation("Handling user message: {PromptLength} chars", userPrompt.Length);
 
             using var op = Operation.At(LogEventLevel.Information).Begin("Handling user message");
 
             // First generation pass: user prompt → raw model output
-            string modelOutput = await _gemmaService.GenerateAsync(ChatRole.User, userPrompt);
+            string modelOutput = await _gemmaService.GenerateAsync(ChatRole.User, userPrompt, ct);
 
             _logger.LogDebug("First model generation: {output}", modelOutput);
 
@@ -53,6 +53,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
 
             foreach (var call in toolCalls)
             {
+                ct.ThrowIfCancellationRequested();
                 _logger.LogInformation("Executing tool {ToolName} with args {@Args}", call.Name, call.Arguments);
 
                 using var toolOp = Operation.Time($"Executing tool {call.Name}");
@@ -65,7 +66,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
                     continue;
                 }
 
-                var toolExecutionResult = await handler.ExecuteAsync(call.Arguments);
+                var toolExecutionResult = await handler.ExecuteAsync(call.Arguments, ct);
                 var toolResult = toolExecutionResult.Payload;
                 _logger.LogDebug("Tool Result: {output}", toolResult);
 
@@ -85,7 +86,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             _logger.LogDebug("Second model generation: {output}", combinedToolResults);
             _logger.LogInformation("Tools executed. Generating final response with tool context.");
 
-            string finalOutput = await _gemmaService.GenerateAsync(ChatRole.Tool, combinedToolResults);
+            string finalOutput = await _gemmaService.GenerateAsync(ChatRole.Tool, combinedToolResults, ct);
             _logger.LogDebug("Final output: {output}", finalOutput);
 
             op.Complete();
