@@ -16,6 +16,7 @@ using FinancialStatisticsAdminiculum.Api.Extensions;
 using Castle.DynamicProxy;
 using Serilog;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
+using FinancialStatisticsAdminiculum.Api.Middleware;
 
 namespace FinancialStatisticsAdminiculum.Api
 {
@@ -23,24 +24,6 @@ namespace FinancialStatisticsAdminiculum.Api
     {
         public static async Task Main(string[] args)
         {
-            // Create a Logger Configuration
-            /*
-            Log.Logger = new LoggerConfiguration()
-                // Initialize the logs Hierarchy 
-                .MinimumLevel.Debug()
-                // Enrich: add specifications to events
-                .Enrich.FromLogContext()                         
-                .Enrich.WithMachineName()
-                .Enrich.WithThreadId()
-                .WriteTo.Console(new CompactJsonFormatter())     // Sink: structured JSON to stdout
-                .WriteTo.File(                                   // Sink: Write structured JSON logs to File
-                    new CompactJsonFormatter(),
-                    path: "logs/fsa-.log",
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 14
-                )
-                .CreateLogger();
-            */
             try
             {
                 // uses ASP.NET Core WebApplication to create a services environment(IServiceCollection) with preconfigured defaults
@@ -123,10 +106,13 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 // Resolve Seeder
                 using (var scope = app.Services.CreateScope())
-                {
-                    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-                    await seeder.SeedAsync();
-                }
+                    {
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        db.Database.Migrate();
+
+                        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+                        await seeder.SeedAsync();
+                    }
 
                 app.UseExceptionHandler();
 
@@ -139,6 +125,9 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 // Redirects Http requests to Https
                 app.UseHttpsRedirection();
+
+                // Add correlationId logs
+                app.UseMiddleware<RequestLogContextMiddleware>();
 
                 // Request Serilog Logging with options
                 app.UseSerilogRequestLogging(options =>

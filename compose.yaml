@@ -1,0 +1,58 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: FinancialStatisticsAdminiculum.Api/Dockerfile
+    ports:
+      - "5000:8080"
+    env_file: .env
+    volumes: 
+      - /home/chi/models/functiongemma_oga:/models/functiongemma_oga:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__LocalConnection=Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - Paths__modelPath=/models/functiongemma_oga
+    depends_on:
+      db:
+        condition: service_healthy
+      seq:
+        condition: service_started
+    networks:
+      - backend
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    shm_size: 128mb
+    env_file: .env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+    restart: always
+
+  seq:
+    image: datalust/seq:latest
+    env_file: .env
+    environment: 
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORD=${SEQ_FIRSTRUN_ADMINPASSWORD}
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - backend
+    restart: always
+
+volumes:
+  db_data:
+  seq_data:
+
+networks:
+  backend:
