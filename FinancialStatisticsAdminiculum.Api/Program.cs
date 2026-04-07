@@ -61,13 +61,6 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Register ToolResolver
                 builder.Services.AddScoped<IToolResolver, ToolResolver>();
 
-                // Model Singleton registration
-                builder.Services.AddSingleton(sp =>
-                new GemmaModelFactory(
-                    modelPath,
-                    sp.GetRequiredService<ILogger<GemmaModelFactory>>()
-                ));
-
                 // Register execution tool handlers
                 builder.Services.AddScoped<IGemmaTool, SmaToolHandler>();
                 builder.Services.AddKeyedScoped<IGemmaTool, SmaToolHandler>(SmaToolHandler.ToolName);
@@ -95,12 +88,18 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Assuming you created the ProxyExtensions class we discussed earlier.
                 builder.Services.AddProxiedScoped<IOrchestratorService, OrchestratorService, SecurityExceptionInterceptor>();
                 builder.Services.AddProxiedScoped<ITrendAnalysisService, TrendAnalysisService, SecurityExceptionInterceptor>();
-                builder.Services.AddProxiedScoped<IGemmaOnnxService, GemmaOnnxService, SecurityExceptionInterceptor>();
+                //builder.Services.AddProxiedScoped<IGemmaOnnxService, GemmaOnnxService, SecurityExceptionInterceptor>();
 
 
                 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen();
+
+                // Add Http Client to comunicate with model api
+                builder.Services.AddHttpClient<IGemmaOnnxService, GemmaOnnxService>(client =>
+                {
+                    client.BaseAddress = new Uri("");
+                });
 
                 var app = builder.Build();
 

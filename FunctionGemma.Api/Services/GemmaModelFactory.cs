@@ -1,7 +1,6 @@
 using Microsoft.ML.OnnxRuntimeGenAI;
-using Microsoft.Extensions.Logging;
 
-namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
+namespace FunctionGemma.Api.Services
 {
     public class GemmaModelFactory : IDisposable
     {

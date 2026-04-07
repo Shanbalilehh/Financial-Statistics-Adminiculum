@@ -1,5 +1,4 @@
-﻿using Microsoft.ML.OnnxRuntimeGenAI;
-using FinancialStatisticsAdminiculum.Application.Interfaces;
+﻿using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Infrastructure.AI.Entities;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -10,20 +9,19 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
 {
     public class GemmaOnnxService : IGemmaOnnxService
     {
-        private readonly GemmaModelFactory _factory;
         private readonly IAiSchemaAggregator _schemaAggregator;
         private readonly ILogger<GemmaOnnxService> _logger;
-
-        private readonly List<ChatMessage> _chatHistory = new();
-
+        private readonly List<ChatMessage> _chatHistory = [];
+        private readonly HttpClient _client;
         public GemmaOnnxService(
-            GemmaModelFactory factory,
             IAiSchemaAggregator schemaAggregator,
-            ILogger<GemmaOnnxService> logger)
+            ILogger<GemmaOnnxService> logger,
+            HttpClient client
+            )
         {
-            _factory = factory;
             _schemaAggregator = schemaAggregator;
             _logger = logger;
+            _client = client;
 
             InitializeDeveloperPrompt();
         }
@@ -50,34 +48,13 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
 
         private async Task<string> GenerateTokensAsync(string fullPrompt, CancellationToken ct = default)
         {
-            _logger.LogDebug("Starting token generation for prompt length: {Length}", fullPrompt.Length);
+            var response = await _client.PostAsync("/Inference", new StringContent(fullPrompt, Encoding.UTF8, "text/plain"), ct);
+            
+            response.EnsureSuccessStatusCode();
 
-            return await Task.Run(() =>
-            {
-                using var sequences = _factory.Tokenizer.Encode(fullPrompt);
-                using var generatorParams = new GeneratorParams(_factory.Model);
+            var body = await response.Content.ReadAsStringAsync(ct);
 
-                generatorParams.SetSearchOption("temperature", 0.0);
-                generatorParams.SetSearchOption("max_length", 2048);
-
-                using var generator = new Generator(_factory.Model, generatorParams);
-                generator.AppendTokenSequences(sequences);
-
-                using var tokenizerStream = _factory.Tokenizer.CreateStream();
-                var sb = new StringBuilder();
-
-                while (!generator.IsDone())
-                {
-                    ct.ThrowIfCancellationRequested();
-                    generator.GenerateNextToken();
-                    var newTokenId = generator.GetSequence(0)[^1];
-                    sb.Append(tokenizerStream.Decode(newTokenId));
-                }
-
-                string result = sb.ToString();
-                _logger.LogDebug("Generation complete. Produced {CharCount} chars.", result.Length);
-                return result;
-            }, ct);
+            return body!;
         }
     }
 }
