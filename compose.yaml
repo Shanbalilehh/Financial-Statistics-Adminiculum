@@ -1,25 +1,24 @@
 services:
-  api:
+  project:
     build:
       context: .
       dockerfile: FinancialStatisticsAdminiculum.Api/Dockerfile
     ports:
       - "5000:8080"
     env_file: .env
-    volumes: 
-      - /home/chi/models/functiongemma_oga:/models/functiongemma_oga:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__LocalConnection=Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      - Paths__modelPath=/models/functiongemma_oga
     depends_on:
       db:
         condition: service_healthy
       seq:
         condition: service_started
+      api:
+        condition: service_healthy
     networks:
       - backend
-    restart: unless-stopped
+    restart: always
 
   db:
     image: postgres:16-alpine
@@ -49,6 +48,23 @@ services:
     networks:
       - backend
     restart: always
+
+  api:
+    build:
+      context: ./FunctionGemma.Api
+      dockerfile: Dockerfile
+    networks:
+      - backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Paths__modelPath=/app/models/functiongemma_oga
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f -X POST http://Api/inference -H 'Content-Type: text/plain' -H 'Accept: text/plain' -d '<start>hello<end>'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: always
+
 
 volumes:
   db_data:

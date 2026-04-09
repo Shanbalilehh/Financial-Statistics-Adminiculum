@@ -12,15 +12,23 @@ string modelPath = builder.Configuration.GetValue<string>("Paths:modelPath") ?? 
     "Missing required configuration key 'Paths:modelPath'."
 );
 
+
+// use serilog as logger and appsettings.json to configure serilog
 builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
 
+// Register GemmaModelFactory DI
 builder.Services.AddSingleton(sp =>
     new GemmaModelFactory(
         modelPath,
         sp.GetRequiredService<ILogger<GemmaModelFactory>>()
 ));
 
+// Register GemmaOnnxService DI
 builder.Services.AddScoped<IGemmaOnnxService, GemmaOnnxService>();
+
+// Api healthcheck
+/*builder.Services.AddHealthChecks()
+    .AddCheck<GemmaModelHealthCheck>("gemma_model_check");*/
 
 // NSwag setup
 builder.Services.AddEndpointsApiExplorer();
@@ -35,6 +43,9 @@ var app = builder.Build();
 
 // add correlationId per http request context
 app.UseMiddleware<RequestLogContextMiddleware>();
+
+// add Healthcheck
+//app.MapHealthChecks("/health");
 
 app.Services.GetRequiredService<GemmaModelFactory>();
 // Http request logging
@@ -66,7 +77,7 @@ app.MapPost("/Inference", async (HttpRequest request, IGemmaOnnxService gemmaOnn
         return Results.Ok(new { Message = result });
     }
 ).Accepts<string>("text/plain")
-.ProducesProblem(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status200OK, contentType: "text/plain")
 .ProducesProblem(StatusCodes.Status400BadRequest)
 .ProducesProblem(StatusCodes.Status500InternalServerError);
 
