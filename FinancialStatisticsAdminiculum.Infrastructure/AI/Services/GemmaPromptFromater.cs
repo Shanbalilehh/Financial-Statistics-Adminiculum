@@ -35,8 +35,6 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
                         if (message.ToolCalls != null && message.ToolCalls.Count > 0)
                         {
                             // The model generated a tool call. 
-                            // Note: FunctionGemma does NOT output <end_of_turn> after a tool call.
-                            // It waits for the tool response first.
                             sb.Append(message.Content); 
                         }
                         else
@@ -64,7 +62,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
             // Add the generation prompt if the last message was from the user
             if (history[^1].Role == ChatRole.User)
             {
-                sb.Append("<start_of_turn>model\n");
+                sb.Append("<start_of_turn>model ");
             }
 
             return sb.ToString();

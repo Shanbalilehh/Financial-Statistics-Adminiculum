@@ -7,7 +7,6 @@ namespace FunctionGemma.Api.Services
         public Model Model { get; }
         public Tokenizer Tokenizer { get; }
         private readonly ILogger<GemmaModelFactory> _logger;
-        public bool IsModelLoaded { get; private set; }
 
         public GemmaModelFactory(string modelPath, ILogger<GemmaModelFactory> logger)
         {

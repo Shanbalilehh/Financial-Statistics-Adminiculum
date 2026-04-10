@@ -4,6 +4,8 @@ using System.Threading;
 using FunctionGemma.Api.Interfaces;
 using FunctionGemma.Api.Middleware;
 using FunctionGemma.Api.Services;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,19 @@ string modelPath = builder.Configuration.GetValue<string>("Paths:modelPath") ?? 
 
 // use serilog as logger and appsettings.json to configure serilog
 builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
+
+// use OpenTelemetry
+builder.Services
+    .AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("FSA.Api"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation();
+        
+        tracing.AddOtlpExporter();
+    });
 
 // Register GemmaModelFactory DI
 builder.Services.AddSingleton(sp =>

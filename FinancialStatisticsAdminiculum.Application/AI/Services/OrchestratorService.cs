@@ -5,6 +5,8 @@ using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Entities;
+using FinancialStatisticsAdminiculum.Application.AI.SchemaValidators;
+using FinancialStatisticsAdminiculum.Core.Exceptions;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Services
 {
@@ -36,6 +38,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             // First generation pass: user prompt → raw model output
             string modelOutput = await _gemmaService.GenerateAsync(ChatRole.User, userPrompt, ct);
 
+            _logger.LogInformation("First model generation.");
             _logger.LogDebug("First model generation: {output}", modelOutput);
 
             // Attempt to parse tool calls from the raw output
@@ -43,7 +46,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
 
             if (toolCalls.Count == 0)
             {
-                _logger.LogDebug("No tool calls detected. Returning direct model response.");
+                _logger.LogInformation("No tool calls detected. Returning direct model response.");
                 op.Complete();
                 return modelOutput;
             }
@@ -68,6 +71,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
 
                 var toolExecutionResult = await handler.ExecuteAsync(call.Arguments, ct);
                 var toolResult = toolExecutionResult.Payload;
+                _logger.LogInformation("Tool Executed: {toolName}", call.Name);
                 _logger.LogDebug("Tool Result: {output}", toolResult);
 
                 if (toolExecutionResult.IsSuccess)

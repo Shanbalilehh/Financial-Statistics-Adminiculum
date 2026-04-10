@@ -17,6 +17,9 @@ using Castle.DynamicProxy;
 using Serilog;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using FinancialStatisticsAdminiculum.Api.Middleware;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Npgsql;
 
 namespace FinancialStatisticsAdminiculum.Api
 {
@@ -33,12 +36,24 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 // Sets Serilog as logging provider
                 builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
+                builder.Services
+                    .AddOpenTelemetry()
+                    .ConfigureResource(resource => resource.AddService("FSA.Api"))
+                    .WithTracing(tracing =>
+                    {
+                        tracing
+                            .AddAspNetCoreInstrumentation()
+                            .AddEntityFrameworkCoreInstrumentation()
+                            .AddHttpClientInstrumentation()
+                            .AddNpgsql();
+                        
+                        tracing.AddOtlpExporter();
+                    });
 
                 // Connection string appsetting.json
                 var connectionString = builder.Configuration.GetConnectionString("LocalConnection");
                 string modelPath = builder.Configuration.GetValue<string>("Paths:modelPath") ?? throw new InvalidOperationException(
-        "Missing required configuration key 'Paths:modelPath'.");
-
+                    "Missing required configuration key 'Paths:modelPath'.");
 
                 // Add services to the container.
                 // Add Dbcontext service
@@ -103,19 +118,20 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 var app = builder.Build();
 
-                // Resolve Seeder
-                using (var scope = app.Services.CreateScope())
-                    {
-                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                        db.Database.Migrate();
-
-                        var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-                        await seeder.SeedAsync();
-                    }
-
+                // inject defined exception handler exception handler
                 app.UseExceptionHandler();
 
-                // Configure the HTTP request pipeline.
+                // Resolve Seeder
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    db.Database.Migrate();
+
+                    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+                    await seeder.SeedAsync();
+                }
+                
+                // use Swagger just in dev env
                 if (app.Environment.IsDevelopment())
                 {
                     app.UseSwagger();
@@ -133,9 +149,6 @@ namespace FinancialStatisticsAdminiculum.Api
                 {
                     options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
                 });
-
-                // Add Routing
-                app.UseRouting();
 
                 app.UseAuthorization();
 
