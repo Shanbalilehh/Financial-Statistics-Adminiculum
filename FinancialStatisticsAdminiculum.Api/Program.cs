@@ -98,7 +98,7 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Add Http Client to comunicate with model api
                 builder.Services.AddHttpClient<IGemmaOnnxService, GemmaOnnxService>(client =>
                 {
-                    client.BaseAddress = new Uri("http://Api/inference");
+                    client.BaseAddress = new Uri("http://Api:8080/inference");
                 });
 
                 var app = builder.Build();

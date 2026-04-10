@@ -56,10 +56,9 @@ services:
     networks:
       - backend
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
       - Paths__modelPath=/app/models/functiongemma_oga
     healthcheck:
-      test: ["CMD-SHELL", "curl -f -X POST http://Api/inference -H 'Content-Type: text/plain' -H 'Accept: text/plain' -d '<start>hello<end>'"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3

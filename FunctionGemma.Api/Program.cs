@@ -27,8 +27,8 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddScoped<IGemmaOnnxService, GemmaOnnxService>();
 
 // Api healthcheck
-/*builder.Services.AddHealthChecks()
-    .AddCheck<GemmaModelHealthCheck>("gemma_model_check");*/
+builder.Services.AddHealthChecks()
+    .AddCheck<GemmaModelHealthCheck>("gemma_model_check");
 
 // NSwag setup
 builder.Services.AddEndpointsApiExplorer();
@@ -45,7 +45,7 @@ var app = builder.Build();
 app.UseMiddleware<RequestLogContextMiddleware>();
 
 // add Healthcheck
-//app.MapHealthChecks("/health");
+app.MapHealthChecks("/health");
 
 app.Services.GetRequiredService<GemmaModelFactory>();
 // Http request logging
