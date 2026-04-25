@@ -62,7 +62,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
             // Add the generation prompt if the last message was from the user
             if (history[^1].Role == ChatRole.User)
             {
-                sb.Append("<start_of_turn>model ");
+                sb.Append("<start_of_turn>model\n");
             }
 
             return sb.ToString();

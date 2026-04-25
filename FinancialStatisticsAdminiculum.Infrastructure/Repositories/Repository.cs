@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
-using FinancialStatisticsAdminiculum.Infrastructure.Persistence; // Adjust namespace
 using System.Linq.Expressions;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.Repositories
@@ -23,7 +22,6 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Repositories
 
         public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
         {
-            // OCP Win: The specific query logic is passed in, not hardcoded here.
             return await _dbSet.Where(predicate).ToListAsync();
         }
 

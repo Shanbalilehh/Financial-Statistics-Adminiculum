@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Entities;
+using FinancialStatisticsAdminiculum.Infrastructure.Messaging;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
 {
@@ -40,7 +41,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
             _chatHistory.Add(new ChatMessage { Role = role, Content = content });
 
             string promptString = GemmaPromptFormatter.BuildPrompt(_chatHistory);
-            string modelOutput = await GenerateTokensAsync(promptString, ct);
+            string modelOutput = await RequestInferenceClient.PublishInferenceWork(promptString, ct);
 
             _chatHistory.Add(new ChatMessage { Role = ChatRole.Model, Content = modelOutput });
             return modelOutput;

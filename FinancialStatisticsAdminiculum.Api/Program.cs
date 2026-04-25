@@ -7,6 +7,7 @@ using FinancialStatisticsAdminiculum.Application.AI.SchemaGenerators;
 using FinancialStatisticsAdminiculum.Application.AI.Parsers;
 using FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling;
 using FinancialStatisticsAdminiculum.Infrastructure.AI.Services;
+using FinancialStatisticsAdminiculum.Infrastructure;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Application.Services;

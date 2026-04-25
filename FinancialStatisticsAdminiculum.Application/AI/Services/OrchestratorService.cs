@@ -5,8 +5,6 @@ using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Core.Entities;
-using FinancialStatisticsAdminiculum.Application.AI.SchemaValidators;
-using FinancialStatisticsAdminiculum.Core.Exceptions;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Services
 {

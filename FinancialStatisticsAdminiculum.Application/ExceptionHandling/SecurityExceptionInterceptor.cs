@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using FinancialStatisticsAdminiculum.Core.Exceptions;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 
-namespace FinancialStatisticsAdminiculum.Application.Services
+namespace FinancialStatisticsAdminiculum.Application.ExceptionHandling
 {
     public class SecurityExceptionInterceptor : IInterceptor
     {
