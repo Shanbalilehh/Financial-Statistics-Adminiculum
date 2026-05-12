@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FinancialStatisticsAdminiculum.Core\FinancialStatisticsAdminiculum.Core.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
 </Project>

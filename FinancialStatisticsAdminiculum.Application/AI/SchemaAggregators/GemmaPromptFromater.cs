@@ -1,8 +1,8 @@
 using System.Text;
-using FinancialStatisticsAdminiculum.Infrastructure.AI.Entities;
 using FinancialStatisticsAdminiculum.Core.Entities;
+using FinancialStatisticsAdminiculum.Application.AI.Entities;
 
-namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Services
+namespace FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators
 {
     public class GemmaPromptFormatter
     {

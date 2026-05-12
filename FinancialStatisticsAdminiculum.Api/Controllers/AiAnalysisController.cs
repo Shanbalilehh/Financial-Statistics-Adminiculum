@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
+using FinancialStatisticsAdminiculum.Api.DTOs;
 
 namespace FinancialStatisticsAdminiculum.API.Controllers
 {
@@ -21,7 +22,7 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
 
         // 4. HTTP methods with ProducesResponseType
         [HttpPost("analyze")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status202Accepted)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         
@@ -30,17 +31,10 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
         {
             if (string.IsNullOrWhiteSpace(request.Prompt))
                 return BadRequest(new { Error = "The prompt cannot be empty." });
-            // This single line triggers the entire pipeline:
-            // Gemma -> JSON -> Tool Strategy -> Database Repo -> Math Extensions
-            string result = await _orchestratorService.HandleUserMessageAsync(request.Prompt);
             
-            return Ok(new { Message = result });
+            var correlationId = await _orchestratorService.HandleUserMessageAsync(request.Prompt);
+            
+            return Accepted(new{ JobId = correlationId});
         }
-    }
-
-    // A simple DTO to bind the incoming JSON body
-    public class PromptRequest
-    {
-        public string Prompt { get; set; } = string.Empty;
     }
 }

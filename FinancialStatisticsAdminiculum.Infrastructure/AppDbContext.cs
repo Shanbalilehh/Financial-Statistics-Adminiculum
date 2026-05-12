@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Core.Entities;
+using FinancialStatisticsAdminiculum.Infrastructure.Messaging.Entities;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure
 {
@@ -12,9 +13,11 @@ namespace FinancialStatisticsAdminiculum.Infrastructure
 
         public DbSet<Asset> Assets { get; set; }
         public DbSet<PricePoint> PricePoints { get; set; }
+        public DbSet<AnalysisJob> AnalysisJobs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            
             base.OnModelCreating(modelBuilder);
 
             // This line automatically finds and applies the configurations above

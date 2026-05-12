@@ -3,10 +3,10 @@ using FinancialStatisticsAdminiculum.Infrastructure.Repositories;
 using FinancialStatisticsAdminiculum.Infrastructure.Persistence;
 using FinancialStatisticsAdminiculum.Application.AI.Services;
 using FinancialStatisticsAdminiculum.Application.AI.Factories;
-using FinancialStatisticsAdminiculum.Application.AI.SchemaGenerators;
+using FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators;
 using FinancialStatisticsAdminiculum.Application.AI.Parsers;
+using FinancialStatisticsAdminiculum.Application.ExceptionHandling;
 using FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling;
-using FinancialStatisticsAdminiculum.Infrastructure.AI.Services;
 using FinancialStatisticsAdminiculum.Infrastructure;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using Microsoft.EntityFrameworkCore;
@@ -110,12 +110,6 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen();
-
-                // Add Http Client to comunicate with model api
-                builder.Services.AddHttpClient<IGemmaOnnxService, GemmaOnnxService>(client =>
-                {
-                    client.BaseAddress = new Uri("http://Api:8080/inference");
-                });
 
                 var app = builder.Build();
 

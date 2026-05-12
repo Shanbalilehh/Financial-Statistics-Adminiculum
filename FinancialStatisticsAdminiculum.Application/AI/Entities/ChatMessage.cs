@@ -1,7 +1,6 @@
-using FinancialStatisticsAdminiculum.Application.AI.Entities;
 using FinancialStatisticsAdminiculum.Core.Entities;
 
-namespace FinancialStatisticsAdminiculum.Infrastructure.AI.Entities
+namespace FinancialStatisticsAdminiculum.Application.AI.Entities
 {
     public class ChatMessage
     {

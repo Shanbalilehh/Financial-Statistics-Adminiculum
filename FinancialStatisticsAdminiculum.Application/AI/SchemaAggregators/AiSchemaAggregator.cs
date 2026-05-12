@@ -3,7 +3,7 @@ using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace FinancialStatisticsAdminiculum.Application.AI.SchemaGenerators
+namespace FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators
 {
     //Objective: Tools Schemas ready for passing to model (developer)
     public class AiSchemaAggregator : IAiSchemaAggregator

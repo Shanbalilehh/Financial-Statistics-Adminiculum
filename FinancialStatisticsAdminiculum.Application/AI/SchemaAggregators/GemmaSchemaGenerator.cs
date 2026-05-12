@@ -1,7 +1,7 @@
 using System.Text;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 
-namespace FinancialStatisticsAdminiculum.Application.AI.SchemaGenerators
+namespace FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators
 {
     //Objective: Generate Tools Schema from objects
     public static class GemmaSchemaGenerator

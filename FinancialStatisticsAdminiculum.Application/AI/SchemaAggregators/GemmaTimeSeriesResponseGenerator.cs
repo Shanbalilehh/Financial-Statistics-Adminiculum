@@ -2,7 +2,7 @@ using System.Text;
 using System.Globalization;
 using FinancialStatisticsAdminiculum.Application.DTOs;
 
-namespace FinancialStatisticsAdminiculum.Application.AI.SchemaGenerators
+namespace FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators
 {
     // Objective: Generate Tool Response strings using TimeSeriesDto
     public static class GemmaTimeSeriesResponseGenerator
