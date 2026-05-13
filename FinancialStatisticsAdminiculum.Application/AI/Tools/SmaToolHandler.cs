@@ -1,6 +1,6 @@
 ﻿using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Entities;
-using FinancialStatisticsAdminiculum.Application.AI.SchemaGenerators;
+using FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Tools

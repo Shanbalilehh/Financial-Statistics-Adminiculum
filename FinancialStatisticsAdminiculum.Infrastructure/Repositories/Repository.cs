@@ -15,9 +15,9 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Repositories
             _dbSet = _context.Set<T>();
         }
 
-        public async Task<T?> GetByIdAsync(int id)
+        public async Task<T?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await _dbSet.FindAsync(id);
+            return await _dbSet.FindAsync(id, ct);
         }
 
         public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)

@@ -3,7 +3,7 @@ using RabbitMQ.Client;
 using System.Text.Json;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
 
-namespace FinancialStatisticsAdminiculum.Infrastructure.Messaging.Clients
+namespace FinancialStatisticsAdminiculum.Infrastructure.Messaging.Services
 {
     public class RabbitMQMessagePublisher : IMessagePublisher
     {

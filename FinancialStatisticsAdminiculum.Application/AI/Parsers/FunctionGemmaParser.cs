@@ -1,5 +1,5 @@
-using FinancialStatisticsAdminiculum.Application.AI.Entities;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
+using FinancialStatisticsAdminiculum.Core.Entities;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.Parsers
 {

@@ -1,6 +1,6 @@
 using FinancialStatisticsAdminiculum.Application.AI.Entities;
 
-namespace FinancialStatisticsAdminiculum.Application.Messaging
+namespace FinancialStatisticsAdminiculum.Infrastructure.Messaging.Entities
 {
     public class AnalysisJob
     {
