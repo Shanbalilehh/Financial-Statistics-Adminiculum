@@ -1,4 +1,4 @@
-﻿namespace FinancialStatisticsAdminiculum.Application.AI.Entities
+﻿namespace FinancialStatisticsAdminiculum.Core.Entities
 {
     public class GemmaToolCall
     {

@@ -1,6 +1,5 @@
 using System.Text;
 using FinancialStatisticsAdminiculum.Core.Entities;
-using FinancialStatisticsAdminiculum.Application.AI.Entities;
 
 namespace FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators
 {

@@ -29,6 +29,8 @@
 //Logger configuration via context (appsettings.json) vs Logger configuration statement in program.cs
 //appsettings.json cleaner program.cs and centralize configurations. program.cs more direct via methods.
 //Decision: We will use appsettings.json to configure the Logger in order to centralize configurations.
+//
+//Note: Use cancellationToken in all async operations to allow for better control and responsiveness in the application.
 ///
 //EXAMPLE CODE FOR PROGRAM.CS
 //

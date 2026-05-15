@@ -12,6 +12,6 @@ namespace FinancialStatisticsAdminiculum.Core.Interfaces
         IRepository<PricePoint> PricePoints { get; }
 
         // The single "Save" button for the whole transaction
-        Task<int> CompleteAsync();
+        Task<int> CompleteAsync(CancellationToken ct = default);
     }
 }

@@ -1,12 +1,11 @@
-using FinancialStatisticsAdminiculum.Application.AI.Entities;
-
-namespace FinancialStatisticsAdminiculum.Infrastructure.Messaging.Entities
+namespace FinancialStatisticsAdminiculum.Core.Entities
 {
     public class AnalysisJob
     {
-        public Guid CorrelationId { get; init; }
+        public int Id { get; init; }
+        public Guid CorrelationId { get; init; } = Guid.NewGuid();
         public string Status { get; set; } = "Pending";
-        public List<ChatMessage> History { get; set; } = [];
+        public List<ChatMessage> History { get; private set; } = [];
 
         public void AddChatMessage( ChatMessage message)
         {
