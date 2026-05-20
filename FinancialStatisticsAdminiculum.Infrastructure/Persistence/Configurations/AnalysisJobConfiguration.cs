@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using FinancialStatisticsAdminiculum.Infrastructure.Messaging.Entities;
+using FinancialStatisticsAdminiculum.Core.Entities;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence.configurations
 {

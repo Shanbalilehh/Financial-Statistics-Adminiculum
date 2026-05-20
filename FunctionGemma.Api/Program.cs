@@ -2,6 +2,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using FunctionGemma.Api.Interfaces;
+using FunctionGemma.Api.Messaging.Services;
 using FunctionGemma.Api.Middleware;
 using FunctionGemma.Api.Services;
 using OpenTelemetry.Resources;
@@ -38,8 +39,9 @@ builder.Services.AddSingleton(sp =>
         sp.GetRequiredService<ILogger<GemmaModelFactory>>()
 ));
 
-// Register GemmaOnnxService DI
-builder.Services.AddScoped<IGemmaOnnxService, GemmaOnnxService>();
+
+builder.Services.AddHostedService<RabbitMQMessageConsumer>();
+builder.Services.AddScoped<IScopedProcessingService, GemmaOnnxService>();
 
 // Api healthcheck
 builder.Services.AddHealthChecks()
@@ -63,6 +65,7 @@ app.UseMiddleware<RequestLogContextMiddleware>();
 app.MapHealthChecks("/health");
 
 app.Services.GetRequiredService<GemmaModelFactory>();
+
 // Http request logging
 app.UseSerilogRequestLogging();
 
@@ -78,24 +81,6 @@ if (app.Environment.IsDevelopment())
         config.DocExpansion = "list";
     });
 }
-
-app.MapPost("/Inference", async (HttpRequest request, IGemmaOnnxService gemmaOnnxService ,CancellationToken ct) =>
-    {
-        using var reader = new StreamReader(request.Body);
-        string prompt = await reader.ReadToEndAsync(ct);
-
-        if(string.IsNullOrWhiteSpace(prompt))
-            return Results.BadRequest(new { Error = "The prompt cannot be empty." });
-
-        string result = await gemmaOnnxService.GenerateTokensAsync(prompt, ct);
-
-        return Results.Ok(new { Message = result });
-    }
-).Accepts<string>("text/plain")
-.Produces(StatusCodes.Status200OK, contentType: "text/plain")
-.ProducesProblem(StatusCodes.Status400BadRequest)
-.ProducesProblem(StatusCodes.Status500InternalServerError);
-
 
 
 app.Run();

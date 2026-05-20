@@ -2,11 +2,12 @@ using FunctionGemma.Api.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntimeGenAI;
 using System.Text;
+using Shared.Contracts;
 
 
 namespace FunctionGemma.Api.Services
 {
-    public class GemmaOnnxService : IGemmaOnnxService
+    public class GemmaOnnxService : IScopedProcessingService
     {
         private readonly GemmaModelFactory _factory;
         private readonly ILogger<GemmaOnnxService> _logger;
@@ -16,13 +17,13 @@ namespace FunctionGemma.Api.Services
             _logger = logger;
         }
 
-        public async Task<string> GenerateTokensAsync(string fullPrompt, CancellationToken ct = default)
+        public async Task<InferenceResponseMessage> GenerateTokensAsync(InferenceRequestMessage message, CancellationToken stoppingToken)
         {
-            _logger.LogDebug("Starting token generation for prompt length: {Length}", fullPrompt.Length);
+            _logger.LogDebug("Starting token generation for prompt length: {Length}", message.Prompt.Length);
 
-            return await Task.Run(() =>
+            var result = await Task.Run(() =>
             {
-                using var sequences = _factory.Tokenizer.Encode(fullPrompt);
+                using var sequences = _factory.Tokenizer.Encode(message.Prompt);
                 using var generatorParams = new GeneratorParams(_factory.Model);
 
                 generatorParams.SetSearchOption("temperature", 0.0);
@@ -36,7 +37,7 @@ namespace FunctionGemma.Api.Services
 
                 while (!generator.IsDone())
                 {
-                    ct.ThrowIfCancellationRequested();
+                    stoppingToken.ThrowIfCancellationRequested();
                     generator.GenerateNextToken();
                     var newTokenId = generator.GetSequence(0)[^1];
                     sb.Append(tokenizerStream.Decode(newTokenId));
@@ -45,7 +46,8 @@ namespace FunctionGemma.Api.Services
                 string result = sb.ToString();
                 _logger.LogDebug("Generation complete. Produced {CharCount} chars.", result.Length);
                 return result;
-            }, ct);
+            }, stoppingToken);
+            return new InferenceResponseMessage(message.CorrelationId, result, true, null, "Complete");
         }
     }
 }

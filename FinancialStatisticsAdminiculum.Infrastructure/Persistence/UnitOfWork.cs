@@ -24,10 +24,10 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence
         public IRepository<PricePoint> PricePoints => 
             _pricePoints ??= new Repository<PricePoint>(_context);
 
-        public async Task<int> CompleteAsync()
+        public async Task<int> CompleteAsync(CancellationToken ct = default)
         {
             // This commits ALL changes from ALL repositories in one transaction
-            return await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync(ct);
         }
 
         public void Dispose()

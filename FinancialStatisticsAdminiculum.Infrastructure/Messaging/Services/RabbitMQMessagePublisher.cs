@@ -17,7 +17,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Messaging.Services
             await channel.ExchangeDeclareAsync(exchange: "Inference", type: ExchangeType.Direct);
 
             var body = JsonSerializer.SerializeToUtf8Bytes(message);
-            await channel.BasicPublishAsync(exchange: "Inference", routingKey: "Request", body: body);
+            await channel.BasicPublishAsync(exchange: "Inference", routingKey: "QueueA", body: body);
 
         }
     }

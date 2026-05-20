@@ -86,4 +86,22 @@ public static class ProxyExtensions
     }
 }
 
-//
+//First Hosted implementation for FunctionGemma.Api as an Endpoint
+/*
+app.MapPost("/Inference", async (HttpRequest request, IGemmaOnnxService gemmaOnnxService ,CancellationToken ct) =>
+    {
+        using var reader = new StreamReader(request.Body);
+        string prompt = await reader.ReadToEndAsync(ct);
+
+        if(string.IsNullOrWhiteSpace(prompt))
+            return Results.BadRequest(new { Error = "The prompt cannot be empty." });
+
+        string result = await gemmaOnnxService.GenerateTokensAsync(prompt, ct);
+
+        return Results.Ok(new { Message = result });
+    }
+).Accepts<string>("text/plain")
+.Produces(StatusCodes.Status200OK, contentType: "text/plain")
+.ProducesProblem(StatusCodes.Status400BadRequest)
+.ProducesProblem(StatusCodes.Status500InternalServerError);
+*/

@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Core.Entities;
-using FinancialStatisticsAdminiculum.Infrastructure.Messaging.Entities;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure
 {

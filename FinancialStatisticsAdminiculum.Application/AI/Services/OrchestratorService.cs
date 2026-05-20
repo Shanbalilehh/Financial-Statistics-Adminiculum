@@ -1,9 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SerilogTimings;
-using Serilog.Events;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
-using FinancialStatisticsAdminiculum.Application.AI.Entities;
 using FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators;
 using FinancialStatisticsAdminiculum.Core.Entities;
 using Shared.Contracts;
@@ -29,46 +27,44 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             List<ChatMessage> chatHistory,
             IMessagePublisher publisher,
             IAiSchemaAggregator schemaAggregator,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IRepository<AnalysisJob> analysisJobRepository
+            )
         {
             _resolver = resolver;
             _logger = logger;
             _parser = parser;
-            //_gemmaService = gemmaService;
             _chatHistory = chatHistory;
             _publisher = publisher;
             _schemaAggregator = schemaAggregator;
             _unitOfWork = unitOfWork;
-            InitializeDeveloperPrompt();
-        }
-        private void InitializeDeveloperPrompt()
-        {
-            string dynamicToolsSchema = _schemaAggregator.BuildCombinedTool();
-            _logger.LogDebug("Initialized Developer Schema: {Schema}", dynamicToolsSchema);
-
-            string developerContent = $"You are a model that can do function calling with the following functions\n{dynamicToolsSchema}";
-            _chatHistory.Add(new ChatMessage { Role = ChatRole.Developer, Content = developerContent });
-        }
-        private async Task AppendHistoryAsync(Guid CorrelationId, ChatMessage message, CancellationToken ct = default)
-        {
-
+            _analysisJobRepository = analysisJobRepository;
         }
 
         public async Task<Guid> HandleUserMessageAsync(string userPrompt, CancellationToken ct = default)
         {
+
+            var job = new AnalysisJob();
+
+            string dynamicToolsSchema = _schemaAggregator.BuildCombinedTool();
+            _logger.LogDebug("Initialized Developer Schema: {Schema}", dynamicToolsSchema);
+
+            string developerContent = $"You are a model that can do function calling with the following functions\n{dynamicToolsSchema}";
+            await HistoryConstructor.AppendChatMessageAsync(_analysisJobRepository, job.CorrelationId, new ChatMessage { Role = ChatRole.Developer, Content = developerContent }, _unitOfWork, ct);
+
             _logger.LogInformation("Handling user message: {PromptLength} chars", userPrompt.Length);
 
-            using var op = Operation.At(LogEventLevel.Information).Begin("Handling user message");
+            //using var op = Operation.At(LogEventLevel.Information).Begin("Handling user message");
 
             // First generation pass: user prompt → raw model output
             //string modelOutput = await _gemmaService.GenerateAsync(ChatRole.User, userPrompt, ct);
+            
 
-            _chatHistory.Add(new ChatMessage { Role = ChatRole.User, Content = userPrompt });
+            await HistoryConstructor.AppendChatMessageAsync(_analysisJobRepository, job.CorrelationId, new ChatMessage { Role = ChatRole.User, Content = userPrompt }, _unitOfWork, ct);
 
-            string functionCallPromptString = GemmaPromptFormatter.BuildPrompt(_chatHistory);
-            var correlationId = Guid.NewGuid();
-            var requestMessage = new InferenceRequestMessage(correlationId, functionCallPromptString);
-            _publisher.PublishRequest(requestMessage);
+            string functionCallPromptString = GemmaPromptFormatter.BuildPrompt(job.History);
+            var requestMessage = new InferenceRequestMessage(job.CorrelationId, functionCallPromptString);
+            await _publisher.PublishRequest(requestMessage);
 
             ////////////////
             //_chatHistory.Add(new ChatMessage { Role = ChatRole.Model, Content = modelOutput });
@@ -121,19 +117,19 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             }*/
 
             // Second generation pass: feed tool results back, get final response
-            string combinedToolResults = string.Join("", toolResults);
-            _logger.LogDebug("Second model generation: {output}", combinedToolResults);
-            _logger.LogInformation("Tools executed. Generating final response with tool context.");
+            //string combinedToolResults = string.Join("", toolResults);
+            //_logger.LogDebug("Second model generation: {output}", combinedToolResults);
+            //_logger.LogInformation("Tools executed. Generating final response with tool context.");
 
-            _chatHistory.Add(new ChatMessage { Role = ChatRole.Tool, Content = combinedToolResults });
+            //_chatHistory.Add(new ChatMessage { Role = ChatRole.Tool, Content = combinedToolResults });
 
             string functionResponsePromptString = GemmaPromptFormatter.BuildPrompt(_chatHistory);
-            var functionResponseRequestMessage = new InferenceRequestMessage(correlationId, functionCallPromptString);
-            _publisher.PublishRequest(functionResponseRequestMessage);
-            _logger.LogDebug("Final output: {output}", finalOutput);
+            //var functionResponseRequestMessage = new InferenceRequestMessage(correlationId, functionCallPromptString);
+            //_publisher.PublishRequest(functionResponseRequestMessage);
+            //_logger.LogDebug("Final output: {output}", finalOutput);
 
-            op.Complete();
-            return finalOutput;
+            //op.Complete();
+            //return finalOutput;
         }
     }
 }
