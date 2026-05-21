@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntimeGenAI;
 using System.Text;
 using Shared.Contracts;
+using Shared.Entities;
 
 
 namespace FunctionGemma.Api.Services
@@ -47,7 +48,7 @@ namespace FunctionGemma.Api.Services
                 _logger.LogDebug("Generation complete. Produced {CharCount} chars.", result.Length);
                 return result;
             }, stoppingToken);
-            return new InferenceResponseMessage(message.CorrelationId, result, true, null, "Complete");
+            return new InferenceResponseMessage(message.CorrelationId, result, true, null, State.textCall);
         }
     }
 }

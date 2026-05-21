@@ -1,4 +1,8 @@
 using FunctionGemma.Api.Interfaces;
+using Shared.Contracts;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System.Text.Json;
 
 namespace FunctionGemma.Api.Messaging.Services
 {
@@ -13,26 +17,26 @@ namespace FunctionGemma.Api.Messaging.Services
 
             await channel.ExchangeDeclareAsync(exchange: "Inference", type: ExchangeType.Direct);
 
+            // Declare a temporary queue and bind it to the exchange with the routing key "QueueA"
             var queueDeclareResult = await channel.QueueDeclareAsync();
             string queueName = queueDeclareResult.QueueName;
 
             await channel.QueueBindAsync(queue: queueName, exchange: "Inference", routingKey: "QueueA");
 
             var consumer = new AsyncEventingBasicConsumer(channel);
-            consumer.ReceivedAsync += (model, ea) =>
+            consumer.ReceivedAsync += async (model, ea) =>
             {
                 using IServiceScope scope = serviceScopeFactory.CreateScope();
 
-                IScopedProcessingService scopedProcessingService =
-                    scope.ServiceProvider.GetRequiredService<IScopedProcessingService>();
+                IScopedProcessingService scopedProcessingService = scope.ServiceProvider.GetRequiredService<IScopedProcessingService>();
 
                 var body = ea.Body.ToArray();
                 var message = JsonSerializer.Deserialize<InferenceRequestMessage>(body) ?? throw new InvalidOperationException("Failed to deserialize message.");
-                var routingKey = ea.RoutingKey;
                 var response = await scopedProcessingService.GenerateTokensAsync(message, stoppingToken);
-                return Task.CompletedTask;
             };
             await channel.BasicConsumeAsync(queueName, autoAck: true, consumer: consumer);
+
+            await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken);
         }
 
         public override async Task StopAsync(CancellationToken stoppingToken)

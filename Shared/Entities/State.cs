@@ -1,6 +1,6 @@
 namespace Shared.Entities
 {
-    public enum state
+    public enum State
     {
         functionCall,
         textCall,
