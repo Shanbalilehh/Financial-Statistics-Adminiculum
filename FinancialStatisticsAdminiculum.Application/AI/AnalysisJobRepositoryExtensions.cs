@@ -3,7 +3,7 @@ using FinancialStatisticsAdminiculum.Core.Interfaces;
 
 namespace FinancialStatisticsAdminiculum.Application.AI
 {
-    public static class HistoryConstructor
+    public static class AnalysisJobRepositoryExtensions
     {
         public static async Task<AnalysisJob> GetByCorrelationIdAsync(
             this IRepository<AnalysisJob> repository,

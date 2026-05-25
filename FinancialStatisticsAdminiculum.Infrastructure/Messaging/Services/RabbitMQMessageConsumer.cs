@@ -1,10 +1,12 @@
-using FunctionGemma.Api.Interfaces;
-using Shared.Contracts;
+using FinancialStatisticsAdminiculum.Application.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text.Json;
+using Shared.Contracts;
 
-namespace FunctionGemma.Api.Messaging.Services
+namespace FinancialStatisticsAdminiculum.Infrastructure.Messaging.Services
 {
     public class RabbitMQMessageConsumer(IServiceScopeFactory serviceScopeFactory) : BackgroundService
     {
@@ -15,30 +17,24 @@ namespace FunctionGemma.Api.Messaging.Services
             using var connection = await factory.CreateConnectionAsync(stoppingToken);
             using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-            await channel.ExchangeDeclareAsync(exchange: "Inference", type: ExchangeType.Direct, cancellationToken: stoppingToken);
-
             await channel.ExchangeDeclareAsync(exchange: "Response", type: ExchangeType.Direct, cancellationToken: stoppingToken);
 
             // Declare a temporary queue and bind it to the exchange with the routing key "QueueA"
             var queueDeclareResult = await channel.QueueDeclareAsync(cancellationToken: stoppingToken);
             string queueName = queueDeclareResult.QueueName;
 
-            await channel.QueueBindAsync(queue: queueName, exchange: "Inference", routingKey: "QueueA", cancellationToken: stoppingToken);
+            await channel.QueueBindAsync(queue: queueName, exchange: "Response", routingKey: "QueueB", cancellationToken: stoppingToken);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
             consumer.ReceivedAsync += async (model, ea) =>
             {
                 using IServiceScope scope = serviceScopeFactory.CreateScope();
 
-                IScopedProcessingService scopedProcessingService = scope.ServiceProvider.GetRequiredService<IScopedProcessingService>();
+                IOrchestratorService orchestratorService = scope.ServiceProvider.GetRequiredService<IOrchestratorService>();
 
                 var requestBody = ea.Body.ToArray();
-                var message = JsonSerializer.Deserialize<InferenceRequestMessage>(requestBody) ?? throw new InvalidOperationException("Failed to deserialize message.");
-                var response = await scopedProcessingService.GenerateTokensAsync(message, stoppingToken);
-
-                // Publish response to queue "QueueB"
-                var responseBody = JsonSerializer.SerializeToUtf8Bytes(response);
-                await channel.BasicPublishAsync(exchange: "Response", routingKey: "QueueB", body: responseBody);
+                var message = JsonSerializer.Deserialize<InferenceResponseMessage>(requestBody) ?? throw new InvalidOperationException("Failed to deserialize message.");
+                await orchestratorService.ProcessInferenceResponseAsync(message, stoppingToken);
             };
             await channel.BasicConsumeAsync(queueName, autoAck: true, consumer: consumer, cancellationToken: stoppingToken);
 
@@ -49,5 +45,6 @@ namespace FunctionGemma.Api.Messaging.Services
         {
             await base.StopAsync(stoppingToken);
         }
+
     }
 }
