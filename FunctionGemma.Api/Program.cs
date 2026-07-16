@@ -40,6 +40,7 @@ builder.Services.AddSingleton(sp =>
 ));
 
 
+// Register RabbitMQMessageConsumer and GemmaOnnxService DI
 builder.Services.AddHostedService<RabbitMQMessageConsumer>();
 builder.Services.AddScoped<IScopedProcessingService, GemmaOnnxService>();
 

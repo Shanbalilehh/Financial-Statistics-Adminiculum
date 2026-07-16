@@ -18,6 +18,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
         private readonly IAiSchemaAggregator _schemaAggregator;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<AnalysisJob> _analysisJobRepository;
+        private readonly IJobCompletionNotifier _notifier;
 
         public OrchestratorService(
             IToolResolver resolver,
@@ -26,7 +27,8 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             IMessagePublisher publisher,
             IAiSchemaAggregator schemaAggregator,
             IUnitOfWork unitOfWork,
-            IRepository<AnalysisJob> analysisJobRepository
+            IRepository<AnalysisJob> analysisJobRepository,
+            IJobCompletionNotifier notifier
             )
         {
             _resolver = resolver;
@@ -36,6 +38,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             _schemaAggregator = schemaAggregator;
             _unitOfWork = unitOfWork;
             _analysisJobRepository = analysisJobRepository;
+            _notifier = notifier;
         }
 
         public async Task<Guid> HandleUserMessageAsync(string userPrompt, CancellationToken ct = default)
@@ -122,6 +125,9 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
                 // === STATE: FINAL RESPONSE ===
                 job.Status = State.finalResponse; 
                 await _unitOfWork.CompleteAsync(ct); 
+
+                await _notifier.NotifyJobCompletedAsync(
+                new JobCompletedEvent(job.CorrelationId, response.GeneratedText), ct);
                 
                 _logger.LogInformation("Job {Id} completed successfully.", job.CorrelationId);
             }

@@ -8,6 +8,7 @@ using FinancialStatisticsAdminiculum.Application.AI.Parsers;
 using FinancialStatisticsAdminiculum.Application.ExceptionHandling;
 using FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling;
 using FinancialStatisticsAdminiculum.Infrastructure;
+using FinancialStatisticsAdminiculum.Infrastructure.Messaging.Services;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Application.Services;
@@ -86,6 +87,9 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 // Register the Database Seeder
                 builder.Services.AddScoped<DatabaseSeeder>();
+
+                // Registe RabbitMQMessageConsumer
+                builder.Services.AddHostedService<RabbitMQMessageConsumer>();
 
                 //Exception Handling
                 // 1. Register the ASP.NET Core Global Exception Handler

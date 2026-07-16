@@ -11,19 +11,20 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
     // 1. DataAnnotations: ApiController, Route, and JSON response
     [ApiController]
     [Route("api/[controller]")]
-    [Produces("application/json")]
     
     // 2. Inherit from base class
     public class AiAnalysisController : ControllerBase
     {
         private readonly IOrchestratorService _orchestratorService;
         private readonly IRepository<AnalysisJob> _analysisJobRepository;
+        private readonly IJobCompletionNotifier _notifier;
 
         // 3. Constructor DI
         public AiAnalysisController(IOrchestratorService orchestratorService, IRepository<AnalysisJob> analysisJobRepository)
         {
             _orchestratorService = orchestratorService;
             _analysisJobRepository = analysisJobRepository;
+            
         }
 
         // 4. HTTP methods with ProducesResponseType
@@ -35,6 +36,7 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
         // 5. Service methods as tasks
         public async Task<IActionResult> AnalyzeTextAsync([FromBody] PromptRequest request)
         {
+            Response.ContentType = "application/json";
             if (string.IsNullOrWhiteSpace(request.Prompt))
                 return BadRequest(new { Error = "The prompt cannot be empty." });
             
@@ -43,7 +45,7 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
             return Accepted(new{ JobId = correlationId});
         }
 
-        [HttpGet("{jobId}")]
+        /*[HttpGet("{jobId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetAnalysisResultAsync(Guid jobId, CancellationToken ct)
@@ -76,6 +78,14 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
                 Status = job.Status.ToString(),
                 Result = finalMessage?.Content
             });
+        }*/
+        [HttpGet("{jobId}/stream")]
+        public async Task Get()
+        {
+            Response.ContentType = "text/event-stream";
+
+            await foreach (var jobEvent in  )
+
         }
     }
 }
