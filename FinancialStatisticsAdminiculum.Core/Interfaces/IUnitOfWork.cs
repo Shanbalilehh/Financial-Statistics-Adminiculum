@@ -1,7 +1,9 @@
 ﻿using FinancialStatisticsAdminiculum.Core.Entities;
+using FinancialStatisticsAdminiculum.Core.Exceptions;
 
 namespace FinancialStatisticsAdminiculum.Core.Interfaces
 {
+    [RiskCommunity("PersistenceCommunity")]
     public interface IUnitOfWork : IDisposable
     {
         // Expose your specific repositories here
@@ -10,6 +12,6 @@ namespace FinancialStatisticsAdminiculum.Core.Interfaces
         IRepository<PricePoint> PricePoints { get; }
 
         // The single "Save" button for the whole transaction
-        Task<int> CompleteAsync();
+        Task<int> CompleteAsync(CancellationToken ct = default);
     }
 }

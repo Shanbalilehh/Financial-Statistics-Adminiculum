@@ -31,7 +31,14 @@ namespace FinancialStatisticsAdminiculum.Api.Infrastructure
             };
 
             // 3. Map Semantic exceptions to specific HTTP semantics
-            if (exception is SemanticDomainException semanticEx)
+            if (exception is PersistenceConstraintException PerConEx)
+            {
+                problemDetails.Title = "Data Integrity Violation";
+                problemDetails.Status = StatusCodes.Status400BadRequest;
+                problemDetails.Detail = PerConEx.Message;
+
+            }
+            else if (exception is SemanticDomainException semanticEx)
             {
                 problemDetails.Title = "Domain Rule Violation or Dependency Failure";
                 problemDetails.Status = StatusCodes.Status503ServiceUnavailable; // Or 400, depending on the rule

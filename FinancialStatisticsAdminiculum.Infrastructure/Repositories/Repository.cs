@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
-using FinancialStatisticsAdminiculum.Infrastructure.Persistence; // Adjust namespace
 using System.Linq.Expressions;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.Repositories
@@ -16,40 +15,34 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Repositories
             _dbSet = _context.Set<T>();
         }
 
-        public async Task<T?> GetByIdAsync(int id)
+        public async Task<T?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await _dbSet.FindAsync(id);
+            return await _dbSet.FindAsync(id, ct);
         }
 
-        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
         {
-            // OCP Win: The specific query logic is passed in, not hardcoded here.
-            return await _dbSet.Where(predicate).ToListAsync();
+            return await _dbSet.Where(predicate).ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync()
+        public async Task<IEnumerable<T>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _dbSet.ToListAsync();
+            return await _dbSet.ToListAsync(ct);
         }
 
-        public async Task AddAsync(T entity)
+        public async Task AddAsync(T entity, CancellationToken ct = default)
         {
-            await _dbSet.AddAsync(entity);
+            await _dbSet.AddAsync(entity, ct);
         }
 
-        public async Task AddRangeAsync(IEnumerable<T> entities)
+        public async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default)
         {
-            await _dbSet.AddRangeAsync(entities);
+            await _dbSet.AddRangeAsync(entities, ct);
         }
 
         public void Remove(T entity)
         {
             _dbSet.Remove(entity);
-        }
-
-        public async Task SaveChangesAsync()
-        {
-            await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FinancialStatisticsAdminiculum.Core.Exceptions;
+using Shared.Contracts;
 
 namespace FinancialStatisticsAdminiculum.Application.Interfaces
 {
-    public class IOrchestratorService
+    [RiskCommunity("NlpCommunity")]
+    public interface IOrchestratorService
     {
+        Task<Guid> HandleUserMessageAsync(string userPrompt, CancellationToken ct = default);
+        Task ProcessInferenceResponseAsync(InferenceResponseMessage message, CancellationToken ct);
     }
 }

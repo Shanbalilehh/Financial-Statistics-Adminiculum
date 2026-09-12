@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FinancialStatisticsAdminiculum.Application.DTOs;
 
 namespace FinancialStatisticsAdminiculum.Application.Interfaces
 {
-    public class ITrendAnalysisService
+    public interface ITrendAnalysisService
     {
+        Task<TimeSeriesDto> GetMovingAverageAsync(string ticker, DateTime from, DateTime to, int period);
     }
 }

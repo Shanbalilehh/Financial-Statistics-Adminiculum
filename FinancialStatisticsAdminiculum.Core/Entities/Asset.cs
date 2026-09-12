@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace FinancialStatisticsAdminiculum.Core.Entities
+﻿namespace FinancialStatisticsAdminiculum.Core.Entities
 {
     public class Asset
     {
@@ -11,9 +8,9 @@ namespace FinancialStatisticsAdminiculum.Core.Entities
         public Asset(string ticker, string name, string assetType)
         {
             if (string.IsNullOrWhiteSpace(ticker)) 
-                throw new ArgumentException("Asset ticker required", nameof(ticker)); // Fixed
+                throw new ArgumentException("Asset ticker required", nameof(ticker)); 
             if (string.IsNullOrWhiteSpace(name)) 
-                throw new ArgumentException("Asset name required", nameof(name));     // Fixed
+                throw new ArgumentException("Asset name required", nameof(name));     
             if (string.IsNullOrWhiteSpace(assetType)) 
                 throw new ArgumentException("Asset type required", nameof(assetType));
 

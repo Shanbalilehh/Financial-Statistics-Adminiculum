@@ -1,5 +1,4 @@
-﻿using System;
-using FinancialStatisticsAdminiculum.Core.Entities;
+﻿using FinancialStatisticsAdminiculum.Core.Entities;
 
 namespace FinancialStatisticsAdminiculum.Core.Extensions
 {

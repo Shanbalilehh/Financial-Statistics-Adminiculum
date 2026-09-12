@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FinancialStatisticsAdminiculum.Core.Entities
+﻿namespace FinancialStatisticsAdminiculum.Core.Entities
 {
     public class PricePoint
     {
@@ -14,6 +8,7 @@ namespace FinancialStatisticsAdminiculum.Core.Entities
         public PricePoint(string assetTicker, DateTime timestamp, decimal value)
         {
             if (value < 0) throw new ArgumentException("Price cannot be negative", nameof(value));
+            if (string.IsNullOrWhiteSpace(assetTicker)) throw new ArgumentException("Asset ticker cannot be empty");
             
             AssetTicker = assetTicker;
             Timestamp = timestamp;

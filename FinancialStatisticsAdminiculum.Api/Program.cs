@@ -1,9 +1,14 @@
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Infrastructure.Repositories;
 using FinancialStatisticsAdminiculum.Infrastructure.Persistence;
-using FinancialStatisticsAdminiculum.Infrastructure.AI;
+using FinancialStatisticsAdminiculum.Application.AI.Services;
+using FinancialStatisticsAdminiculum.Application.AI.Factories;
+using FinancialStatisticsAdminiculum.Application.AI.SchemaAggregators;
+using FinancialStatisticsAdminiculum.Application.AI.Parsers;
+using FinancialStatisticsAdminiculum.Application.ExceptionHandling;
 using FinancialStatisticsAdminiculum.Infrastructure.ExceptionHandling;
-using FinancialStatisticsAdminiculum.Application.AI;
+using FinancialStatisticsAdminiculum.Infrastructure;
+using FinancialStatisticsAdminiculum.Infrastructure.Messaging.Services;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Application.Services;
@@ -11,6 +16,12 @@ using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Api.Infrastructure;
 using FinancialStatisticsAdminiculum.Api.Extensions;
 using Castle.DynamicProxy;
+using Serilog;
+using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
+using FinancialStatisticsAdminiculum.Api.Middleware;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Npgsql;
 
 namespace FinancialStatisticsAdminiculum.Api
 {
@@ -18,90 +29,140 @@ namespace FinancialStatisticsAdminiculum.Api
     {
         public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            //Connection string appsetting.json
-            var connectionString = builder.Configuration.GetConnectionString("LocalConnection");
-            // Add services to the container.
-
-            //Dbcontext
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(connectionString));
-            builder.Services.AddControllers();
-
-            // Register the Generic Repository
-            // "Scoped" is correct because DbContext is Scoped.
-            builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-
-            // Register Unit of Work
-            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-            //AI Service Registration with Dynamic JSON Schema  
-            // 1. Build the massive JSON string dynamically at startup
-            string dynamicToolsJson = AiSchemaAggregator.BuildCombinedToolJson();
-
-            // 2. Pass it directly into your Singleton AI Service
-            builder.Services.AddSingleton<INlpEngine>(sp => 
-                new GemmaOnnxService(@"C:\Users\holit\Downloads\FunctionGemmaPytorch\functiongemma_onnx_genai", dynamicToolsJson));
-
-            // 3. Register your execution handlers
-            builder.Services.AddKeyedScoped<IAiToolHandler, SmaToolHandler>(SmaToolHandler.ToolName);
-
-            //Register Application Services handled by proxyExtension
-            //builder.Services.AddScoped<OrchestratorService>();
-            //builder.Services.AddScoped<TrendAnalysisService>();
-
-            // Register the Database Seeder
-            builder.Services.AddScoped<DatabaseSeeder>();
-
-            //Exception Handling
-            // 1. Register the ASP.NET Core Global Exception Handler
-            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-            builder.Services.AddProblemDetails();
-
-            // 2. Register Castle DynamicProxy Mechanics
-            builder.Services.AddSingleton<ProxyGenerator>();
-            builder.Services.AddTransient<SecurityExceptionInterceptor>();
-
-            // 3. Register the Diagnostic & Repair (D&R) Experts using Keyed DI
-            builder.Services.AddKeyedScoped<IDiagnosticExpert, NlpDiagnosticExpert>("NlpCommunity");
-            // builder.Services.AddKeyedScoped<IDiagnosticExpert, PersistenceDiagnosticExpert>("PersistenceCommunity");
-
-            // 4. Register Proxied Application Services
-            // Assuming you created the ProxyExtensions class we discussed earlier.
-            builder.Services.AddProxiedScoped<IOrchestratorService, OrchestratorService, SecurityExceptionInterceptor>();
-            builder.Services.AddProxiedScoped<ITrendAnalysisService, TrendAnalysisService, SecurityExceptionInterceptor>();
-
-
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
-            var app = builder.Build();
-
-            using (var scope = app.Services.CreateScope())
+            try
             {
-                var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-                await seeder.SeedAsync();
+                // uses ASP.NET Core WebApplication to create a services environment(IServiceCollection) with preconfigured defaults
+                var builder = WebApplication.CreateBuilder(args);
+
+                Console.WriteLine($"Current Environment: {builder.Environment.EnvironmentName}");
+
+                // Sets Serilog as logging provider
+                builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
+                builder.Services
+                    .AddOpenTelemetry()
+                    .ConfigureResource(resource => resource.AddService("FSA.Api"))
+                    .WithTracing(tracing =>
+                    {
+                        tracing
+                            .AddAspNetCoreInstrumentation()
+                            .AddEntityFrameworkCoreInstrumentation()
+                            .AddHttpClientInstrumentation()
+                            .AddNpgsql();
+                        
+                        tracing.AddOtlpExporter();
+                    });
+
+                // Connection string appsetting.json
+                var connectionString = builder.Configuration.GetConnectionString("LocalConnection");
+                string modelPath = builder.Configuration.GetValue<string>("Paths:modelPath") ?? throw new InvalidOperationException(
+                    "Missing required configuration key 'Paths:modelPath'.");
+
+                // Add services to the container.
+                // Add Dbcontext service
+                builder.Services.AddDbContext<AppDbContext>(options =>
+                    options.UseNpgsql(connectionString, npgsqlOptions =>
+                    npgsqlOptions.MaxBatchSize(128)
+                    ));
+                builder.Services.AddControllers();
+
+                // Register the Generic Repository
+                // "Scoped" is correct because DbContext is Scoped.
+                builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
+                // Register Unit of Work
+                builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+                // Register FunctionGemmaParser
+                builder.Services.AddSingleton<IFunctionGemmaParser, FunctionGemmaParser>();
+
+                // Register ToolResolver
+                builder.Services.AddScoped<IToolResolver, ToolResolver>();
+
+                // Register execution tool handlers
+                builder.Services.AddScoped<IGemmaTool, SmaToolHandler>();
+                builder.Services.AddKeyedScoped<IGemmaTool, SmaToolHandler>(SmaToolHandler.ToolName);
+
+                //AI Service Registration with Dynamic JSON Schema  
+                builder.Services.AddScoped<IAiSchemaAggregator, AiSchemaAggregator>();
+
+                // Register the Database Seeder
+                builder.Services.AddScoped<DatabaseSeeder>();
+
+                // Registe RabbitMQMessageConsumer
+                builder.Services.AddHostedService<RabbitMQMessageConsumer>();
+
+                //Exception Handling
+                // 1. Register the ASP.NET Core Global Exception Handler
+                builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+                builder.Services.AddProblemDetails();
+
+                // 2. Register Castle DynamicProxy Mechanics
+                builder.Services.AddSingleton<ProxyGenerator>();
+                builder.Services.AddTransient<SecurityExceptionInterceptor>();
+
+                // 3. Register the Diagnostic & Repair (D&R) Experts using Keyed DI
+                builder.Services.AddKeyedScoped<IDiagnosticExpert, NlpDiagnosticExpert>("NlpCommunity");
+                builder.Services.AddKeyedScoped<IDiagnosticExpert, PersistenceDiagnosticExpert>("PersistenceCommunity");
+
+                // 4. Register Proxied Application Services
+                // Assuming you created the ProxyExtensions class we discussed earlier.
+                builder.Services.AddProxiedScoped<IOrchestratorService, OrchestratorService, SecurityExceptionInterceptor>();
+                builder.Services.AddProxiedScoped<ITrendAnalysisService, TrendAnalysisService, SecurityExceptionInterceptor>();
+                //builder.Services.AddProxiedScoped<IGemmaOnnxService, GemmaOnnxService, SecurityExceptionInterceptor>();
+
+
+                // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+                builder.Services.AddEndpointsApiExplorer();
+                builder.Services.AddSwaggerGen();
+
+                var app = builder.Build();
+
+                // inject defined exception handler exception handler
+                app.UseExceptionHandler();
+
+                // Resolve Seeder
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    db.Database.Migrate();
+
+                    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+                    await seeder.SeedAsync();
+                }
+                
+                // use Swagger just in dev env
+                if (app.Environment.IsDevelopment())
+                {
+                    app.UseSwagger();
+                    app.UseSwaggerUI();
+                }
+
+                // Redirects Http requests to Https
+                app.UseHttpsRedirection();
+
+                // Add correlationId logs
+                app.UseMiddleware<RequestLogContextMiddleware>();
+
+                // Request Serilog Logging with options
+                app.UseSerilogRequestLogging(options =>
+                {
+                    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+                });
+
+                app.UseAuthorization();
+
+                app.MapControllers();
+
+                app.Run();
             }
-
-            app.UseExceptionHandler();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            catch (Exception ex)
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+                Log.Fatal(ex, "Application terminated unexpectedly");
             }
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
-
-
-            app.MapControllers();
-
-            app.Run();
+            finally
+            {
+                Log.CloseAndFlush();                             
+            }
         }
     }
 }

@@ -16,28 +16,4 @@ namespace FinancialStatisticsAdminiculum.Core.Exceptions
         }
 
     }
-    // 2. Concrete implementation for the AI Engine
-    public class NlpEngineUnavailableException : SemanticDomainException
-    {
-        public NlpEngineUnavailableException(string message) 
-            : base(message, "NlpCommunity")
-        {
-        }
-    }
-    // 3. Concrete implementation for the Database/Market Data
-    public class MarketDataUnavailableException : SemanticDomainException
-    {
-        public MarketDataUnavailableException(string message) 
-            : base(message, "PersistenceCommunity")
-        {
-        }
-    }
-
-    public class NlpProcessingException : SemanticDomainException
-    {
-        public NlpProcessingException(string message) 
-            : base(message, "NlpCommunity")
-        {
-        }
-    }
 }

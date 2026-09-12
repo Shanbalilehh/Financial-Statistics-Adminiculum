@@ -1,19 +1,21 @@
-﻿using Castle.DynamicProxy;
-using Castle.Core.Internal; 
+﻿using System.Reflection;
+using Castle.DynamicProxy;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
-using FinancialStatisticsAdminiculum.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 using FinancialStatisticsAdminiculum.Core.Exceptions;
+using FinancialStatisticsAdminiculum.Core.Interfaces;
 
-namespace FinancialStatisticsAdminiculum.Application.Services
+namespace FinancialStatisticsAdminiculum.Application.ExceptionHandling
 {
     public class SecurityExceptionInterceptor : IInterceptor
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<SecurityExceptionInterceptor> _logger;
 
-        public SecurityExceptionInterceptor(IServiceProvider serviceProvider)
+        public SecurityExceptionInterceptor(IServiceProvider serviceProvider, ILogger<SecurityExceptionInterceptor> logger)
         {
             _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         public void Intercept(IInvocation invocation)
@@ -32,12 +34,7 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             }
             else if (returnType == typeof(Task))
             {
-                // Correction CS8600 et CS8604 : Vérification de null avant la conversion
-                var task = invocation.ReturnValue as Task;
-                if (task is null)
-                {
-                    throw new InvalidOperationException("La valeur de retour de la méthode est nulle alors qu'un Task était attendu.");
-                }
+                var task = invocation.ReturnValue as Task ?? throw new InvalidOperationException("The return value is NULL when a Task was expected.");
                 invocation.ReturnValue = HandleAsync(task, invocation);
             }
         }
@@ -50,6 +47,7 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             }
             catch (Exception ex)
             {
+                _logger.LogDebug("Handling exception: {ex}", ex);
                 HandleException(ex, invocation);
             }
         }
@@ -62,23 +60,26 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             }
             catch (Exception ex)
             {
+                _logger.LogDebug("Handling exception: {ex}", ex);
                 HandleException(ex, invocation);
-                return default!; // Compiler requires this, but execution won't reach here due to the throw.
+                return default!; 
             }
         }
 
         private void HandleException(Exception ex, IInvocation invocation)
         {
-            // 1. Identifier la communauté de risque (utilise maintenant invocation.TargetType)
-            string communityKey = DetermineRiskCommunity(invocation.TargetType!);
+            // 1. Identify the risk community using our new strong-typed attribute
+            string communityKey = DetermineRiskCommunity(invocation);
 
-            // 2. Résoudre l'expert D&R spécifique via DI Keyed
+            _logger.LogInformation("Routing exception to {CommunityKey} expert.", communityKey);
+
+            // 2. Resolve the specific D&R expert dynamically via DI Keyed Services
             var expert = _serviceProvider.GetKeyedService<IDiagnosticExpert>(communityKey);
 
             if (expert == null)
             {
-                // No expert registered? Bubble up a generic safe failure.
-                throw new InvalidOperationException("Unhandled system failure. No diagnostic expert found.");
+                _logger.LogCritical("No diagnostic expert found for community: {CommunityKey}. Initiating fail-safe.", communityKey);
+                throw new Exception("Unhandled system failure. Security interceptor could not find a diagnostic expert.", ex);
             }
 
             // 3. Evaluate the technical exception
@@ -88,28 +89,36 @@ namespace FinancialStatisticsAdminiculum.Application.Services
             switch (decision.Action)
             {
                 case DiagnosticAction.Retry:
-                    // If using Polly, you might trigger a retry state here. 
-                    // For now, we bubble up the semantic exception to be caught by a higher-level retry policy.
                     throw decision.SemanticException ?? ex;
 
                 case DiagnosticAction.FailSafe:
-                    // Safely terminate and bubble up the sanitized domain exception (e.g., to the API layer)
                     throw decision.SemanticException ?? new Exception("Safe termination triggered.");
 
                 case DiagnosticAction.TerminateSystem:
-                    // Catastrophic failure (e.g., ONNX unmanaged memory corruption leaking into the heap)
-                    Environment.FailFast("Catastrophic failure in unmanaged resources.", ex);
+                    // Catastrophic failure handling
+                    Environment.FailFast($"Catastrophic failure in {communityKey} unmanaged resources.", ex);
                     break;
             }
         }
 
-        private string DetermineRiskCommunity(Type targetType)
+        private static string DetermineRiskCommunity(IInvocation invocation)
         {
-            // Example logic: Map the service to its risk community
-            if (targetType.Name.Contains("Orchestrator") || targetType.Name.Contains("TrendAnalysis"))
-                return "NlpCommunity";
+            // Look at the interface being proxied (e.g., INlpEngine)
+            Type? declaringType = invocation.Method.DeclaringType;
 
-            return "DefaultCommunity";
+            if (declaringType != null)
+            {
+                // Read the custom attribute
+                var attribute = (RiskCommunityAttribute?)Attribute.GetCustomAttribute(declaringType, typeof(RiskCommunityAttribute));
+
+                if (attribute != null)
+                {
+                    return attribute.CommunityName;
+                }
+            }
+
+            // Fallback default if a developer forgot to tag the interface
+            return "SystemCommunity";
         }
     }
 }
