@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fsa.local/schemas/workspace-manifest.schema.json",
+  "title": "WorkspaceManifest",
+  "description": "Portable, reproducible JSON manifest capturing complete workspace topology, entities, parameters, and view state",
+  "type": "object",
+  "required": [
+    "manifestVersion",
+    "exportedAt",
+    "workspace"
+  ],
+  "properties": {
+    "manifestVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "generator": {
+      "type": "string",
+      "default": "FinancialStatisticsAdminiculum"
+    },
+    "workspace": {
+      "type": "object",
+      "required": ["id", "name", "entities", "connections"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string"
+        },
+        "viewport": {
+          "type": "object",
+          "required": ["x", "y", "zoom"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "zoom": { "type": "number", "minimum": 0.1, "maximum": 4.0 }
+          }
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "type", "label", "position", "parameters"],
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "type": { "type": "string" },
+              "label": { "type": "string" },
+              "position": {
+                "type": "object",
+                "required": ["x", "y"],
+                "properties": {
+                  "x": { "type": "number" },
+                  "y": { "type": "number" }
+                }
+              },
+              "parameters": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "connections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "sourceEntityId",
+              "sourcePortId",
+              "targetEntityId",
+              "targetPortId"
+            ],
+            "properties": {
+              "id": { "type": "string" },
+              "sourceEntityId": { "type": "string", "format": "uuid" },
+              "sourcePortId": { "type": "string" },
+              "targetEntityId": { "type": "string", "format": "uuid" },
+              "targetPortId": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using FinancialStatisticsAdminiculum.Core.Entities;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure
@@ -13,6 +13,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure
         public DbSet<Asset> Assets { get; set; }
         public DbSet<PricePoint> PricePoints { get; set; }
         public DbSet<AnalysisJob> AnalysisJobs { get; set; }
+        public DbSet<Workspace> Workspaces { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

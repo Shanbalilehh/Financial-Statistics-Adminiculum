@@ -1,4 +1,4 @@
-﻿using FinancialStatisticsAdminiculum.Core.Entities;
+using FinancialStatisticsAdminiculum.Core.Entities;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Infrastructure.Repositories;
 
@@ -11,6 +11,7 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence
         // We cache the repositories so we don't create new instances every time
         private IRepository<Asset>? _assets;
         private IRepository<PricePoint>? _pricePoints;
+        private IRepository<Workspace>? _workspaces;
 
         public UnitOfWork(AppDbContext context)
         {
@@ -23,6 +24,9 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence
 
         public IRepository<PricePoint> PricePoints => 
             _pricePoints ??= new Repository<PricePoint>(_context);
+
+        public IRepository<Workspace> Workspaces => 
+            _workspaces ??= new Repository<Workspace>(_context);
 
         public async Task<int> CompleteAsync(CancellationToken ct = default)
         {

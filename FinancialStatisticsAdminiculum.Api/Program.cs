@@ -47,7 +47,8 @@ namespace FinancialStatisticsAdminiculum.Api
                             .AddAspNetCoreInstrumentation()
                             .AddEntityFrameworkCoreInstrumentation()
                             .AddHttpClientInstrumentation()
-                            .AddNpgsql();
+                            .AddNpgsql()
+                            .AddSource("FSA.Workspace");
                         
                         tracing.AddOtlpExporter();
                     });
@@ -81,6 +82,10 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Register execution tool handlers
                 builder.Services.AddScoped<IGemmaTool, SmaToolHandler>();
                 builder.Services.AddKeyedScoped<IGemmaTool, SmaToolHandler>(SmaToolHandler.ToolName);
+                builder.Services.AddScoped<IGemmaTool, VolatilityToolHandler>();
+                builder.Services.AddKeyedScoped<IGemmaTool, VolatilityToolHandler>(VolatilityToolHandler.ToolName);
+                builder.Services.AddScoped<IGemmaTool, SignalTriggerToolHandler>();
+                builder.Services.AddKeyedScoped<IGemmaTool, SignalTriggerToolHandler>(SignalTriggerToolHandler.ToolName);
 
                 //AI Service Registration with Dynamic JSON Schema  
                 builder.Services.AddScoped<IAiSchemaAggregator, AiSchemaAggregator>();
@@ -110,6 +115,21 @@ namespace FinancialStatisticsAdminiculum.Api
                 builder.Services.AddProxiedScoped<ITrendAnalysisService, TrendAnalysisService, SecurityExceptionInterceptor>();
                 //builder.Services.AddProxiedScoped<IGemmaOnnxService, GemmaOnnxService, SecurityExceptionInterceptor>();
 
+
+                // Register WorkspaceService and NlpCommandService
+                builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
+                builder.Services.AddScoped<FinancialStatisticsAdminiculum.Application.AI.Services.INlpCommandService, FinancialStatisticsAdminiculum.Application.AI.Services.NlpCommandService>();
+
+                // Configure CORS for Web frontend
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowFrontend", policy =>
+                    {
+                        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+                              .AllowAnyHeader()
+                              .AllowAnyMethod();
+                    });
+                });
 
                 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
                 builder.Services.AddEndpointsApiExplorer();
@@ -142,6 +162,8 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 // Add correlationId logs
                 app.UseMiddleware<RequestLogContextMiddleware>();
+
+                app.UseCors("AllowFrontend");
 
                 // Request Serilog Logging with options
                 app.UseSerilogRequestLogging(options =>

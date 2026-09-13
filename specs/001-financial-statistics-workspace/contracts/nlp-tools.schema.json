@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fsa.local/schemas/nlp-tools.schema.json",
+  "title": "GemmaDynamicToolDefinition",
+  "description": "Schema for dynamic AI tools actionable via the NLP command palette and executed via FunctionGemma",
+  "type": "object",
+  "required": [
+    "toolName",
+    "description",
+    "category",
+    "parametersSchema",
+    "mutationType"
+  ],
+  "properties": {
+    "toolName": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "description": "Unique machine identifier for the dynamic tool"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed explanation of tool behavior for LLM function calling"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Estimator",
+        "Transformer",
+        "SignalTrigger",
+        "TopologyWiring",
+        "DiagnosticInspection"
+      ]
+    },
+    "parametersSchema": {
+      "type": "object",
+      "description": "JSON Schema validating input parameters expected by the tool",
+      "required": ["type", "properties"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "object"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "mutationType": {
+      "type": "string",
+      "enum": [
+        "ADD_ENTITY",
+        "MUTATE_ENTITY",
+        "CONNECT_ENTITIES",
+        "BATCH_COMPOSITION"
+      ]
+    },
+    "defaultParameters": {
+      "type": "object",
+      "description": "Sensible defaults applied when prompt omits specific parameters"
+    }
+  }
+}

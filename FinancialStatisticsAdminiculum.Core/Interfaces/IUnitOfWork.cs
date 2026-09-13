@@ -1,4 +1,4 @@
-﻿using FinancialStatisticsAdminiculum.Core.Entities;
+using FinancialStatisticsAdminiculum.Core.Entities;
 using FinancialStatisticsAdminiculum.Core.Exceptions;
 
 namespace FinancialStatisticsAdminiculum.Core.Interfaces
@@ -10,6 +10,7 @@ namespace FinancialStatisticsAdminiculum.Core.Interfaces
         // (You can also use a generic accessor, but specific properties are cleaner)
         IRepository<Asset> Assets { get; }
         IRepository<PricePoint> PricePoints { get; }
+        IRepository<Workspace> Workspaces { get; }
 
         // The single "Save" button for the whole transaction
         Task<int> CompleteAsync(CancellationToken ct = default);

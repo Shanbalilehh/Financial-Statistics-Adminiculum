@@ -1,0 +1,416 @@
+openapi: 3.0.3
+info:
+  title: Financial Statistics Workspace API
+  version: 1.0.0
+  description: Endpoints for persisting workspace state, executing NLP dynamic tools, retrieving asset time series, and generating high-fidelity publication exports.
+paths:
+  /api/workspaces:
+    get:
+      summary: List all user workspaces
+      operationId: listWorkspaces
+      responses:
+        '200':
+          description: A list of stored workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkspaceSummary'
+    post:
+      summary: Create a new workspace canvas
+      operationId: createWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceRequest'
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceDetail'
+
+  /api/workspaces/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Retrieve complete workspace state including entities and topology
+      operationId: getWorkspaceById
+      responses:
+        '200':
+          description: Full workspace state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceDetail'
+        '404':
+          description: Workspace not found
+    put:
+      summary: Update or save workspace state
+      operationId: updateWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkspaceRequest'
+      responses:
+        '200':
+          description: Workspace updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceDetail'
+    delete:
+      summary: Delete a workspace
+      operationId: deleteWorkspace
+      responses:
+        '204':
+          description: Workspace successfully deleted
+
+  /api/workspaces/{id}/nlp-command:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Process natural language prompt and return dynamic tool mutations
+      operationId: processNlpCommand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NlpCommandRequest'
+      responses:
+        '200':
+          description: Parsed intent and resulting canvas mutations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NlpCommandResponse'
+        '400':
+          description: Invalid command or unresolvable tool directive
+
+  /api/workspaces/{id}/export/pdf:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      summary: Generate publication-grade multi-page analytical PDF dossier
+      operationId: exportWorkspacePdf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportPdfRequest'
+      responses:
+        '200':
+          description: Binary PDF file stream
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /api/marketdata/assets:
+    get:
+      summary: List available financial assets for price stream entities
+      operationId: listAssets
+      responses:
+        '200':
+          description: List of supported market symbols
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetSummary'
+
+  /api/marketdata/series:
+    get:
+      summary: Fetch historical time series for an asset
+      operationId: getAssetSeries
+      parameters:
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          schema:
+            type: string
+            default: 1d
+        - name: lookback
+          in: query
+          schema:
+            type: integer
+            default: 252
+      responses:
+        '200':
+          description: Timestamped price observations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSeriesData'
+
+components:
+  schemas:
+    WorkspaceSummary:
+      type: object
+      required:
+        - id
+        - name
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        entityCount:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkspaceDetail:
+      type: object
+      required:
+        - id
+        - name
+        - entities
+        - connections
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        viewport:
+          type: object
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+            zoom:
+              type: number
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/AtomicEntitySchema'
+        connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectionSchema'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateWorkspaceRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    UpdateWorkspaceRequest:
+      type: object
+      required:
+        - name
+        - entities
+        - connections
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        viewport:
+          type: object
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/AtomicEntitySchema'
+        connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectionSchema'
+
+    AtomicEntitySchema:
+      type: object
+      required:
+        - id
+        - type
+        - label
+        - position
+        - parameters
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        label:
+          type: string
+        position:
+          type: object
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+        parameters:
+          type: object
+          additionalProperties: true
+
+    ConnectionSchema:
+      type: object
+      required:
+        - id
+        - sourceEntityId
+        - sourcePortId
+        - targetEntityId
+        - targetPortId
+      properties:
+        id:
+          type: string
+        sourceEntityId:
+          type: string
+          format: uuid
+        sourcePortId:
+          type: string
+        targetEntityId:
+          type: string
+          format: uuid
+        targetPortId:
+          type: string
+
+    NlpCommandRequest:
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          example: "Calculate 30-day rolling volatility for AAPL and highlight values above 2 standard deviations"
+
+    NlpCommandResponse:
+      type: object
+      required:
+        - commandId
+        - prompt
+        - status
+        - resolvedTool
+        - mutations
+      properties:
+        commandId:
+          type: string
+          format: uuid
+        prompt:
+          type: string
+        status:
+          type: string
+          enum: [Executed, Failed, Rejected]
+        resolvedTool:
+          type: string
+        extractedArguments:
+          type: object
+        mutations:
+          type: array
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+                enum: [ADD_ENTITY, REMOVE_ENTITY, UPDATE_PARAMETERS, ADD_CONNECTION, REMOVE_CONNECTION]
+              payload:
+                type: object
+        explanation:
+          type: string
+
+    ExportPdfRequest:
+      type: object
+      required:
+        - workspaceTitle
+        - charts
+      properties:
+        workspaceTitle:
+          type: string
+        author:
+          type: string
+        charts:
+          type: array
+          items:
+            type: object
+            properties:
+              entityId:
+                type: string
+              title:
+                type: string
+              svgOrBase64Png:
+                type: string
+              summaryMoments:
+                type: object
+        includeMethodology:
+          type: boolean
+          default: true
+
+    AssetSummary:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        currency:
+          type: string
+
+    TimeSeriesData:
+      type: object
+      properties:
+        symbol:
+          type: string
+        interval:
+          type: string
+        observations:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              close:
+                type: number
+              volume:
+                type: number

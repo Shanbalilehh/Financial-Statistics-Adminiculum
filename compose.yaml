@@ -22,6 +22,18 @@ services:
       - backend
     restart: always
 
+  web:
+    build:
+      context: ./FinancialStatisticsAdminiculum.Web
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - project
+    networks:
+      - backend
+    restart: always
+
   db:
     image: postgres:16-alpine
     shm_size: 128mb
