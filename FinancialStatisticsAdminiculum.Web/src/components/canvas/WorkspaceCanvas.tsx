@@ -19,7 +19,7 @@ import { MovingAverageNode } from '../nodes/MovingAverageNode';
 import { VolatilityEstimatorNode } from '../nodes/VolatilityEstimatorNode';
 import { SignalTriggerNode } from '../nodes/SignalTriggerNode';
 import { EntityType } from '../../types/workspace';
-import { Plus, TrendingUp, Cpu, AlertTriangle, Activity } from 'lucide-react';
+import { TrendingUp, Cpu, AlertTriangle, Activity } from 'lucide-react';
 
 export const WorkspaceCanvas: React.FC = () => {
   const nodes = useWorkspaceStore((s) => s.nodes);

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { WorkspaceCanvas } from './components/canvas/WorkspaceCanvas';
 import { ParameterInspector } from './components/inspector/ParameterInspector';
 import { useWorkspaceStore } from './store/workspaceStore';
-import { RotateCcw, Undo, Redo, LayoutGrid, Terminal } from 'lucide-react';
+import { RotateCcw, Undo, Redo, LayoutGrid } from 'lucide-react';
 
 import { NlpCommandBar } from './components/nlp/NlpCommandBar';
 import { NlpAuditBadge } from './components/nlp/NlpAuditBadge';
@@ -22,7 +22,7 @@ export const App: React.FC = () => {
   // Initialize with a default pair of entities for immediate observation if completely empty
   useEffect(() => {
     if (nodes.length === 0) {
-      const priceId = addEntity('PriceStream', { x: 120, y: 180 }, { symbol: 'AAPL', lookback: 100 });
+      addEntity('PriceStream', { x: 120, y: 180 }, { symbol: 'AAPL', lookback: 100 });
       addEntity('MovingAverage', { x: 440, y: 180 }, { period: 20, method: 'SMA' });
     }
   }, []);

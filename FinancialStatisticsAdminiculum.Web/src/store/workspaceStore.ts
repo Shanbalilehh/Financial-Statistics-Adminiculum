@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Node, Edge, Connection, addEdge } from '@xyflow/react';
-import { EntityType, EntityStatus, AtomicEntity, DiagnosticRecord } from '../types/workspace';
+import { EntityType, EntityStatus, DiagnosticRecord } from '../types/workspace';
 import { calculateSma, calculateEma, calculateRollingVolatility, calculateMoments } from '../kernel/statisticsKernel';
 
 export interface WorkspaceNodeData extends Record<string, unknown> {

@@ -69,7 +69,6 @@ export const NlpCommandBar: React.FC<NlpCommandBarProps> = ({ onMutationApplied 
             const actualTarget = idMap.get(c.targetEntityId) || c.targetEntityId;
 
             addConnection({
-              id: c.id,
               source: actualSource,
               target: actualTarget,
               sourceHandle: c.sourcePortId || 'out_series',

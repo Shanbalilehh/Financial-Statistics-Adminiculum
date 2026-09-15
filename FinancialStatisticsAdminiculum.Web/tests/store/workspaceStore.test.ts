@@ -40,7 +40,6 @@ describe('workspaceStore', () => {
     const nodeId = useWorkspaceStore.getState().nodes[0].id;
 
     const added = store.addConnection({
-      id: 'self-edge',
       source: nodeId,
       target: nodeId,
       sourceHandle: 'out_series',

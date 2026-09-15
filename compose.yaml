@@ -11,12 +11,15 @@ services:
       - ConnectionStrings__LocalConnection=Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://seq:5341/ingest/otlp/v1/traces
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - RabbitMQ__Host=RabbitMQ
     depends_on:
       db:
         condition: service_healthy
       seq:
         condition: service_started
       api:
+        condition: service_healthy
+      RabbitMQ:
         condition: service_healthy
     networks:
       - backend
@@ -68,20 +71,29 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
     networks:
       - backend
     restart: always
 
   api:
     build:
-      context: ./FunctionGemma.Api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: FunctionGemma.Api/Dockerfile
     networks:
       - backend
+    depends_on:
+      RabbitMQ:
+        condition: service_healthy
     environment:
       - Paths__modelPath=/app/models/functiongemma_oga
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://seq:5341/ingest/otlp/v1/traces
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - RabbitMQ__Host=RabbitMQ
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 5m

@@ -69,6 +69,7 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Register the Generic Repository
                 // "Scoped" is correct because DbContext is Scoped.
                 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+                builder.Services.AddSingleton<IJobCompletionNotifier, JobCompletionNotifier>();
 
                 // Register Unit of Work
                 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

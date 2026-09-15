@@ -4,7 +4,7 @@ import { DistributionPlot } from './DistributionPlot';
 import { MomentsTable } from './MomentsTable';
 import { FormulaTraceView } from './FormulaTraceView';
 import { detectAnomalies } from '../../kernel/distributionCalculations';
-import { BarChart3, X, AlertCircle, ChevronRight, Sliders } from 'lucide-react';
+import { BarChart3, X, AlertCircle } from 'lucide-react';
 
 export const StatisticsViewDrawer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,16 +17,6 @@ export const StatisticsViewDrawer: React.FC = () => {
 
   const { type, label, parameters, calculatedValues } = selectedNode.data;
   const series = calculatedValues?.series || [];
-  const moments = calculatedValues?.metrics ? {
-    count: series.length,
-    mean: calculatedValues.metrics.mean || 0,
-    variance: Math.pow(calculatedValues.metrics.stdDev || 0, 2),
-    stdDev: calculatedValues.metrics.stdDev || 0,
-    skewness: 0,
-    kurtosis: 0,
-    quantiles: { p01: 0, p05: 0, p25: 0, p50: 0, p75: 0, p95: 0, p99: 0 },
-  } : undefined;
-
   const anomalies = detectAnomalies(series, 2.0);
 
   return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { computeKde, computeCdf } from '../../kernel/distributionCalculations';
+import { computeKde } from '../../kernel/distributionCalculations';
 
 interface DistributionPlotProps {
   series?: number[];

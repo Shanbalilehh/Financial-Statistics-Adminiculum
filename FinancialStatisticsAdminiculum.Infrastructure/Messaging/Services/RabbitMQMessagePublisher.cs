@@ -2,15 +2,19 @@ using Shared.Contracts;
 using RabbitMQ.Client;
 using System.Text.Json;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.Messaging.Services
 {
-    public class RabbitMQMessagePublisher : IMessagePublisher
+    public class RabbitMQMessagePublisher(IConfiguration configuration) : IMessagePublisher
     {
         public async Task PublishRequest(InferenceRequestMessage message)
         {
 
-            var factory = new ConnectionFactory { HostName = "localhost" };
+            var factory = new ConnectionFactory
+            {
+                HostName = configuration["RabbitMQ:Host"] ?? "localhost"
+            };
             using var connection = await factory.CreateConnectionAsync();
             using var channel = await connection.CreateChannelAsync();
 

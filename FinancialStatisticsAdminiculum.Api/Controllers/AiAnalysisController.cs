@@ -5,6 +5,7 @@ using FinancialStatisticsAdminiculum.Core.Entities;
 using FinancialStatisticsAdminiculum.Core.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI;
 using Shared.Entities;
+using System.Text.Json;
 
 namespace FinancialStatisticsAdminiculum.API.Controllers
 {
@@ -20,11 +21,14 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
         private readonly IJobCompletionNotifier _notifier;
 
         // 3. Constructor DI
-        public AiAnalysisController(IOrchestratorService orchestratorService, IRepository<AnalysisJob> analysisJobRepository)
+        public AiAnalysisController(
+            IOrchestratorService orchestratorService,
+            IRepository<AnalysisJob> analysisJobRepository,
+            IJobCompletionNotifier notifier)
         {
             _orchestratorService = orchestratorService;
             _analysisJobRepository = analysisJobRepository;
-            
+            _notifier = notifier;
         }
 
         // 4. HTTP methods with ProducesResponseType
@@ -80,12 +84,19 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
             });
         }*/
         [HttpGet("{jobId}/stream")]
-        public async Task Get()
+        public async Task Get(Guid jobId, CancellationToken ct)
         {
             Response.ContentType = "text/event-stream";
 
-            await foreach (var jobEvent in  )
+            await foreach (var jobEvent in _notifier.ReadAllEventsAsync(ct))
+            {
+                if (jobEvent.JobId != jobId)
+                    continue;
 
+                await Response.WriteAsync($"data: {JsonSerializer.Serialize(jobEvent)}\n\n", ct);
+                await Response.Body.FlushAsync(ct);
+                break;
+            }
         }
     }
 }

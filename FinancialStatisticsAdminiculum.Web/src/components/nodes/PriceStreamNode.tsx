@@ -1,9 +1,9 @@
 import React from 'react';
-import { NodeProps } from '@xyflow/react';
+import { Node, NodeProps } from '@xyflow/react';
 import { BaseEntityNode } from './BaseEntityNode';
 import { WorkspaceNodeData, useWorkspaceStore } from '../../store/workspaceStore';
 
-export const PriceStreamNode: React.FC<NodeProps<any>> = ({ id, data }) => {
+export const PriceStreamNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = ({ id, data }) => {
   const nodeData = data as WorkspaceNodeData;
   const updateNodeParameters = useWorkspaceStore((s) => s.updateNodeParameters);
 
@@ -19,7 +19,6 @@ export const PriceStreamNode: React.FC<NodeProps<any>> = ({ id, data }) => {
   return (
     <BaseEntityNode
       id={id}
-      type="PriceStream"
       label={`Asset: ${symbol}`}
       status={nodeData.status}
       hasInput={false}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { EntityType } from '../../types/workspace';
 import { getFormulaTrace } from '../../kernel/distributionCalculations';
-import { Code, BookOpen } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 interface FormulaTraceViewProps {
   type: EntityType;

@@ -2,12 +2,11 @@ import React, { ReactNode } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { EntityStatus } from '../../types/workspace';
 import { useWorkspaceStore } from '../../store/workspaceStore';
-import { Trash2, Activity, Settings2 } from 'lucide-react';
+import { Trash2, Activity } from 'lucide-react';
 import { NodeSparkline } from './NodeSparkline';
 
 interface BaseEntityNodeProps {
   id: string;
-  type: string;
   label: string;
   status: EntityStatus;
   hasInput?: boolean;
@@ -21,7 +20,6 @@ interface BaseEntityNodeProps {
 
 export const BaseEntityNode: React.FC<BaseEntityNodeProps> = ({
   id,
-  type,
   label,
   status,
   hasInput = true,

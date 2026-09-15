@@ -4,8 +4,8 @@
 **/.vscode
 **/bin
 **/obj
+**/node_modules
 **/out
 **/*.user
 **/*.userosscache
 **/*.sln.doccache
-FunctionGemma.Api/

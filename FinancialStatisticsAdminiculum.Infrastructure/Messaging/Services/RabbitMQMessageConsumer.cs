@@ -5,14 +5,20 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text.Json;
 using Shared.Contracts;
+using Microsoft.Extensions.Configuration;
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.Messaging.Services
 {
-    public class RabbitMQMessageConsumer(IServiceScopeFactory serviceScopeFactory) : BackgroundService
+    public class RabbitMQMessageConsumer(
+        IServiceScopeFactory serviceScopeFactory,
+        IConfiguration configuration) : BackgroundService
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var factory = new ConnectionFactory { HostName = "localhost" };
+            var factory = new ConnectionFactory
+            {
+                HostName = configuration["RabbitMQ:Host"] ?? "localhost"
+            };
 
             using var connection = await factory.CreateConnectionAsync(stoppingToken);
             using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);

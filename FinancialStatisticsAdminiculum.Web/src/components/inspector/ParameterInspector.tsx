@@ -1,6 +1,6 @@
 import React from 'react';
 import { useWorkspaceStore } from '../../store/workspaceStore';
-import { X, Sliders, Info } from 'lucide-react';
+import { X, Sliders } from 'lucide-react';
 
 export const ParameterInspector: React.FC = () => {
   const selectedNodeId = useWorkspaceStore((s) => s.selectedNodeId);

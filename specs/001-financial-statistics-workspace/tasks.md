@@ -222,3 +222,18 @@ Task T037: Implement NlpAuditBadge in Web/src/components/nlp/NlpAuditBadge.tsx
 3. **Cross-Cutting Verification**:
    - Run full test suites (`dotnet test` and `npm test`).
    - Validate performance against gates ($<200$ms recalculation, $<2$s NLP roundtrip, $<1$s image export, $<3$s PDF report).
+
+---
+
+## Phase 8: Convergence
+
+**Purpose**: Address gaps and constitutional non-compliances identified by `/speckit-converge` relative to `spec.md`, `plan.md`, `constitution.md`, and existing tasks.
+
+- [ ] T055 [P] Scaffold backend test projects (`FinancialStatisticsAdminiculum.Api.Tests` and `FinancialStatisticsAdminiculum.Application.Tests`) and implement `NlpCommandControllerTests.cs` and `DynamicToolTests.cs` per Constitution V and tasks T028/T029 (missing)
+- [ ] T056 [P] Remove `Castle.Core` package reference from `FinancialStatisticsAdminiculum.Core.csproj` to enforce pure domain isolation per Constitution I (contradicts)
+- [ ] T057 [P] Fix KDE density calculation, moment variance rounding, formula trace syntax, and CSV header formatting to achieve 100% passing tests in `FinancialStatisticsAdminiculum.Web` per Constitution V and tasks T016/T038/T045 (contradicts)
+- [ ] T058 Implement atomic batch transaction undo in `workspaceStore.ts` and `NlpCommandBar.tsx` so all mutations from a single NLP execution revert on one Undo action per FR-013, SC-007, US2/AC2 (contradicts)
+- [ ] T059 [P] Implement dedicated node cards, palette buttons, and recalculation handlers for `RollingWindow`, `DistributionAnalyzer`, and `CorrelationMatrix` in `FinancialStatisticsAdminiculum.Web` per FR-003, US1/AC1 (partial)
+- [ ] T060 Refactor `NlpCommandService.cs` to execute through `IToolResolver` and `IAiSchemaAggregator` with schema validation, and convert `SignalTriggerToolHandler` to `decimal` per Constitution II, FR-009, FR-010 (partial)
+- [ ] T061 Add transitive cycle detection to `Workspace.AddConnection` in `Workspace.cs` to prevent cyclic entity graphs at the domain model level per task T007 and spec Edge Cases (partial)
+- [ ] T062 Remove legacy endpoints and commented-out methods in `AiAnalysisController.cs` to maintain clean OpenAPI contract boundaries per plan and task T034 (unrequested)
