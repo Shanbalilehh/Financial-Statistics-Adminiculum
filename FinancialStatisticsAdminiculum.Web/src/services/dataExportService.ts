@@ -5,7 +5,7 @@ export function generateCsvContent(nodes: any[]): string {
   }
 
   const maxLength = Math.max(...activeNodes.map((n) => n.data.calculatedValues.series.length));
-  const headers = ['Observation', ...activeNodes.map((n) => `"${n.data.label || n.id}"`)];
+  const headers = ['Observation', ...activeNodes.map((n) => n.data.label || n.id)];
 
   const rows: string[] = [headers.join(',')];
 

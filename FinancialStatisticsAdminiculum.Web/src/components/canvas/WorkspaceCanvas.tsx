@@ -15,11 +15,14 @@ import '@xyflow/react/dist/style.css';
 
 import { useWorkspaceStore } from '../../store/workspaceStore';
 import { PriceStreamNode } from '../nodes/PriceStreamNode';
+import { RollingWindowNode } from '../nodes/RollingWindowNode';
 import { MovingAverageNode } from '../nodes/MovingAverageNode';
 import { VolatilityEstimatorNode } from '../nodes/VolatilityEstimatorNode';
+import { DistributionAnalyzerNode } from '../nodes/DistributionAnalyzerNode';
+import { CorrelationMatrixNode } from '../nodes/CorrelationMatrixNode';
 import { SignalTriggerNode } from '../nodes/SignalTriggerNode';
 import { EntityType } from '../../types/workspace';
-import { TrendingUp, Cpu, AlertTriangle, Activity } from 'lucide-react';
+import { TrendingUp, Cpu, AlertTriangle, Activity, Sliders, BarChart2, Network } from 'lucide-react';
 
 export const WorkspaceCanvas: React.FC = () => {
   const nodes = useWorkspaceStore((s) => s.nodes);
@@ -31,10 +34,12 @@ export const WorkspaceCanvas: React.FC = () => {
   const nodeTypes = useMemo(
     () => ({
       PriceStream: PriceStreamNode,
+      RollingWindow: RollingWindowNode,
       MovingAverage: MovingAverageNode,
       VolatilityEstimator: VolatilityEstimatorNode,
+      DistributionAnalyzer: DistributionAnalyzerNode,
+      CorrelationMatrix: CorrelationMatrixNode,
       SignalTrigger: SignalTriggerNode,
-      DistributionAnalyzer: MovingAverageNode, // Uses base card
       CustomTransform: MovingAverageNode,
     }),
     []
@@ -86,6 +91,13 @@ export const WorkspaceCanvas: React.FC = () => {
           <span>Price Stream</span>
         </button>
         <button
+          onClick={() => handleAddNode('RollingWindow')}
+          className="flex items-center space-x-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition-all"
+        >
+          <Sliders className="h-3.5 w-3.5" />
+          <span>Rolling Window</span>
+        </button>
+        <button
           onClick={() => handleAddNode('MovingAverage')}
           className="flex items-center space-x-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 text-xs font-medium text-purple-400 hover:bg-purple-500/20 transition-all"
         >
@@ -98,6 +110,20 @@ export const WorkspaceCanvas: React.FC = () => {
         >
           <Cpu className="h-3.5 w-3.5" />
           <span>Volatility</span>
+        </button>
+        <button
+          onClick={() => handleAddNode('DistributionAnalyzer')}
+          className="flex items-center space-x-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1 text-xs font-medium text-cyan-400 hover:bg-cyan-500/20 transition-all"
+        >
+          <BarChart2 className="h-3.5 w-3.5" />
+          <span>Distribution</span>
+        </button>
+        <button
+          onClick={() => handleAddNode('CorrelationMatrix')}
+          className="flex items-center space-x-1.5 rounded-lg bg-pink-500/10 border border-pink-500/20 px-2.5 py-1 text-xs font-medium text-pink-400 hover:bg-pink-500/20 transition-all"
+        >
+          <Network className="h-3.5 w-3.5" />
+          <span>Correlation</span>
         </button>
         <button
           onClick={() => handleAddNode('SignalTrigger')}
@@ -125,8 +151,11 @@ export const WorkspaceCanvas: React.FC = () => {
           nodeStrokeWidth={3}
           nodeColor={(n) => {
             if (n.type === 'PriceStream') return '#38bdf8';
+            if (n.type === 'RollingWindow') return '#10b981';
             if (n.type === 'MovingAverage') return '#a855f7';
             if (n.type === 'VolatilityEstimator') return '#f59e0b';
+            if (n.type === 'DistributionAnalyzer') return '#06b6d4';
+            if (n.type === 'CorrelationMatrix') return '#ec4899';
             if (n.type === 'SignalTrigger') return '#ef4444';
             return '#64748b';
           }}

@@ -18,7 +18,9 @@ Build an unguided, high-performance financial statistics workspace application f
 
 **Primary Dependencies**: 
 - *Backend*: ASP.NET Core 8.0, Entity Framework Core 8 (`Npgsql.EntityFrameworkCore.PostgreSQL`), RabbitMQ.Client, Serilog, OpenTelemetry (Traces + Metrics), Castle DynamicProxy.
-- *Frontend*: React 18+, Vite, `@xyflow/react` (React Flow), Zustand (fine-grained reactive store), Lightweight Charts, Chart.js / D3, `html-to-image`, `jspdf`, `jspdf-autotable`.
+- *Frontend*: React 18+, Vite, Tailwind CSS, shadcn/ui (Radix primitives), Zod (schema validation), TanStack Query (server state & caching), Lucide React (icons), Zustand (fine-grained reactive store), `@xyflow/react` (React Flow), Lightweight Charts, Chart.js / D3, `html-to-image`, `jspdf`, `jspdf-autotable`.
+
+**Visual Design**: Open to customization. The UI layer uses Tailwind CSS utility classes and unopinionated shadcn/ui component primitives styled via CSS variables (theme tokens for colors, borders, typography, and spacing). Visual styling is intentionally decoupled from layout and mathematical logic, allowing rapid theming and customization without rewriting components.
 
 **Storage**: PostgreSQL 16 (relational tables for assets/time-series, JSONB for workspace topology snapshots and audit logs), Browser LocalStorage/IndexedDB for local workspace caching and uncommitted drafts.
 
@@ -53,7 +55,7 @@ Build an unguided, high-performance financial statistics workspace application f
 | Constitutional Principle | Status | Evaluation & Compliance Notes |
 | :--- | :--- | :--- |
 | **I. Layered Architecture & Dependency Inversion** | **PASS** | `Core` maintains pure domain entities (`Asset`, `PricePoint`, `TimeSeries`, `Workspace`, `AtomicEntity`) with zero external dependencies. `Application` defines orchestration and dynamic tools. `Api` and `Web` interact purely through typed REST contracts (`workspace-api.yaml`). |
-| **II. Schema-First AI Tool Contracts & Guardrails** | **PASS** | All dynamic NLP tools implement `IGemmaTool` with explicit JSON schemas validated via `IAiSchemaAggregator`. Tool mutations are strictly validated before mutating canvas state. |
+| **II. Schema-First AI Tool Contracts & Guardrails** | **PASS** | All dynamic NLP tools implement `IGemmaTool` with explicit JSON schemas validated via `IAiSchemaAggregator`. Tool mutations are strictly validated via Zod schemas on the frontend and schema contracts on the backend before mutating canvas state. |
 | **III. Comprehensive Observability & Telemetry** | **PASS** | Serilog structured logging and OpenTelemetry tracing configured across API, database queries, RabbitMQ messaging, and AI inferences. No unstructured console logging. |
 | **IV. Asynchronous Resiliency & Message Idempotency**| **PASS** | Inter-service events use versioned contracts in `Shared.Contracts`. Message consumers implement idempotent handling. Long-running export or simulation jobs track discrete states. |
 | **V. Test-First Quality & Financial Determinism** | **PASS** | TDD mandatory for statistical calculation routines (moving averages, rolling volatility, quantiles) using high-precision numeric types (`decimal`). Integration tests validate EF Core persistence. |
@@ -113,22 +115,29 @@ FinancialStatisticsAdminiculum.Infrastructure/
 ├── Repositories/                    # Generic repository implementations
 └── Messaging/                       # RabbitMQ consumers & publishers
 
-# Frontend Application (React 18 + Vite)
+# Frontend Application (React 18/19 + Vite + Tailwind + shadcn/ui)
 FinancialStatisticsAdminiculum.Web/
 ├── index.html
 ├── package.json
 ├── vite.config.ts
+├── tailwind.config.js
+├── postcss.config.js
+├── components.json                  # shadcn/ui configuration
 ├── src/
 │   ├── components/
-│   │   ├── canvas/                  # React Flow canvas, grid, controls, minimap
-│   │   ├── nodes/                   # Custom atomic entity nodes (Price, MA, Vol, etc.)
-│   │   ├── nlp/                     # Omnipresent NLP command bar & audit badge
-│   │   ├── inspector/               # Statistics View (KDE plots, CDF, formulas)
+│   │   ├── ui/                      # shadcn/ui primitives (button, dialog, input, command, sheet, badge, etc.)
+│   │   ├── canvas/                  # React Flow canvas, grid, controls, minimap (@xyflow/react)
+│   │   ├── nodes/                   # Custom atomic entity nodes (Price, MA, Vol, etc.) with Lucide icons
+│   │   ├── nlp/                     # Omnipresent NLP command bar & audit badge (shadcn Command component)
+│   │   ├── inspector/               # Statistics View drawer / Sheet (KDE plots, CDF, formulas)
 │   │   └── export/                  # Multi-format export dialogs (PDF, PNG, CSV)
 │   ├── kernel/                      # High-precision client-side statistical engine
-│   ├── services/                    # API client, SSE stream handler, export generator
+│   ├── hooks/                       # Custom React hooks & TanStack Query wrappers
+│   ├── queries/                     # TanStack Query definitions for API endpoints
+│   ├── schemas/                     # Zod schemas for validation (manifests, entity params, CSV uploads)
+│   ├── services/                    # API client (Axios/fetch), SSE stream handler, export generator
 │   ├── store/                       # Zustand workspace state & undo/redo history
-│   └── types/                       # TypeScript interfaces mirroring contracts
+│   └── types/                       # TypeScript interfaces inferred from Zod schemas & contracts
 └── tests/                           # Vitest component & kernel unit tests
 
 # Cross-Service & Supporting Projects
@@ -137,7 +146,7 @@ Shared/                              # Shared.Contracts & Shared.Entities
 compose.yaml                         # Multi-service container orchestration
 ```
 
-**Structure Decision**: A modern decoupled web architecture pairing the existing ASP.NET Core Clean Architecture backend with a newly scaffolded React 18+ TypeScript application (`FinancialStatisticsAdminiculum.Web`). This cleanly isolates UI rendering and local reactive calculations from backend persistence, distributed messaging, and GPU/ONNX AI inference.
+**Structure Decision**: A modern decoupled web architecture pairing the existing ASP.NET Core Clean Architecture backend with a newly scaffolded React TypeScript application (`FinancialStatisticsAdminiculum.Web`). The frontend leverages Vite, Tailwind CSS, shadcn/ui, Zod, TanStack Query, Lucide React, and Zustand to deliver high-performance reactivity, contract-first runtime validation, clean iconography, and open, customizable styling.
 
 ---
 

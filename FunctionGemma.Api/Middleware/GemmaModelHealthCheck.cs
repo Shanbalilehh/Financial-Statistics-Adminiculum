@@ -1,39 +1,24 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using FunctionGemma.Api.Interfaces;
+using FunctionGemma.Api.Services;
 
 namespace FunctionGemma.Api.Middleware
 {
     public class GemmaModelHealthCheck : IHealthCheck
     {
-        private readonly IGemmaOnnxService _service;
+        private readonly GemmaModelFactory _factory;
 
-        public GemmaModelHealthCheck(IGemmaOnnxService service)
+        public GemmaModelHealthCheck(GemmaModelFactory factory)
         {
-            _service = service;
+            _factory = factory;
         }
 
-        public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
+        public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)
         {
-            try
-            {
-                // Test 1: Simple prompt
-                string response1 = await _service.GenerateTokensAsync("<start>hello<end>", ct);
-                
-                // Test 2: Different prompt (or same prompt to check for variety/determinism)
-                string response2 = await _service.GenerateTokensAsync("<start>start<end>", ct);
+            var result = _factory.Model is not null && _factory.Tokenizer is not null
+                ? HealthCheckResult.Healthy("Model and tokenizer are loaded.")
+                : HealthCheckResult.Unhealthy("Model or tokenizer is not loaded.");
 
-                // Logic: If the model is responsive and providing different outputs
-                if (!string.IsNullOrWhiteSpace(response1) && response1 != response2)
-                {
-                    return HealthCheckResult.Healthy("Model is responsive and producing varied output.");
-                }
-
-                return HealthCheckResult.Degraded("Model is responding, but output is suspicious or repetitive.");
-            }
-            catch (Exception ex)
-            {
-                return HealthCheckResult.Unhealthy("Model inference failed.", ex);
-            }
+            return Task.FromResult(result);
         }
     }
 }

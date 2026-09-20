@@ -4,11 +4,13 @@ import { ImageExportService } from '../../services/imageExportService';
 import { PdfExportService } from '../../services/pdfExportService';
 import { generateCsvContent, generateJsonExport, downloadFile } from '../../services/dataExportService';
 import { serializeManifest, validateManifest, downloadManifest } from '../../services/manifestService';
-import { Download, FileText, Image, Code2, Table, Upload, Loader2, Check } from 'lucide-react';
+import { Download, FileText, Image, Code2, Table, Upload, Loader2, Check, FileUp } from 'lucide-react';
+import { CsvUploadDialog } from './CsvUploadDialog';
 
 export const ExportMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isCsvDialogOpen, setIsCsvDialogOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -224,6 +226,20 @@ export const ExportMenu: React.FC = () => {
                 <span className="text-[10px] text-slate-500">Restore canvas from JSON</span>
               </div>
             </button>
+
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                setIsCsvDialogOpen(true);
+              }}
+              className="w-full flex items-center space-x-2.5 rounded-lg px-2.5 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+            >
+              <FileUp className="h-4 w-4 text-emerald-400" />
+              <div className="text-left">
+                <span className="font-medium block">Upload Custom CSV...</span>
+                <span className="text-[10px] text-slate-500">Auto-detect & preview data</span>
+              </div>
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -234,6 +250,11 @@ export const ExportMenu: React.FC = () => {
           </div>
         </div>
       )}
+
+      <CsvUploadDialog
+        isOpen={isCsvDialogOpen}
+        onClose={() => setIsCsvDialogOpen(false)}
+      />
 
       {successMessage && (
         <div className="fixed bottom-6 right-44 z-50 flex items-center space-x-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 px-3 py-2 text-xs font-semibold text-emerald-300 shadow-xl backdrop-blur">

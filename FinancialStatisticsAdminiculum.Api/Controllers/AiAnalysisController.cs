@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Api.DTOs;
 using FinancialStatisticsAdminiculum.Core.Entities;
@@ -49,40 +49,6 @@ namespace FinancialStatisticsAdminiculum.API.Controllers
             return Accepted(new{ JobId = correlationId});
         }
 
-        /*[HttpGet("{jobId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetAnalysisResultAsync(Guid jobId, CancellationToken ct)
-        {
-            // 1. Fetch the job using your fast PostgreSQL lookup
-            var job = await AnalysisJobRepositoryExtensions.GetByCorrelationIdAsync(_analysisJobRepository, jobId, ct);
-            
-            if (job == null)
-            {
-                return NotFound(new { Error = "Job not found." });
-            }
-
-            // 2. If the ReAct loop is still ping-ponging, tell the client to keep waiting
-            if (job.Status != State.finalResponse)
-            {
-                return Ok(new 
-                { 
-                    JobId = jobId, 
-                    Status = job.Status.ToString() 
-                });
-            }
-
-            // 3. If finished, extract the final text from the JSONB state bag
-            // Assuming the last message in the history is the model's final output
-            var finalMessage = job.History.LastOrDefault(m => m.Role == ChatRole.Model);
-
-            return Ok(new 
-            {
-                JobId = jobId,
-                Status = job.Status.ToString(),
-                Result = finalMessage?.Content
-            });
-        }*/
         [HttpGet("{jobId}/stream")]
         public async Task Get(Guid jobId, CancellationToken ct)
         {

@@ -12,10 +12,11 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence.configuratio
 
             builder.HasKey(j => j.CorrelationId);
 
-            builder.OwnsMany(job => job.History, builder =>
-            {
-                builder.ToJson();
-            });
+            builder.Property(job => job.History)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<ChatMessage>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<ChatMessage>());
         }
     }
 }

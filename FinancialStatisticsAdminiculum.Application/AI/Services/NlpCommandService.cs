@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FinancialStatisticsAdminiculum.Application.AI.Interfaces;
+using FinancialStatisticsAdminiculum.Application.Interfaces;
 using FinancialStatisticsAdminiculum.Application.AI.Tools;
 using FinancialStatisticsAdminiculum.Application.DTOs;
 using Microsoft.Extensions.Logging;
@@ -35,13 +36,20 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
     public class NlpCommandService : INlpCommandService
     {
         private readonly ILogger<NlpCommandService> _logger;
+        private readonly IToolResolver? _toolResolver;
+        private readonly IAiSchemaAggregator? _schemaAggregator;
 
-        public NlpCommandService(ILogger<NlpCommandService> logger)
+        public NlpCommandService(
+            ILogger<NlpCommandService> logger,
+            IToolResolver? toolResolver = null,
+            IAiSchemaAggregator? schemaAggregator = null)
         {
             _logger = logger;
+            _toolResolver = toolResolver;
+            _schemaAggregator = schemaAggregator;
         }
 
-        public Task<NlpCommandResultDto> ProcessCommandAsync(Guid workspaceId, string prompt, CancellationToken ct = default)
+        public async Task<NlpCommandResultDto> ProcessCommandAsync(Guid workspaceId, string prompt, CancellationToken ct = default)
         {
             _logger.LogInformation("Processing NLP command for workspace {WorkspaceId}: {Prompt}", workspaceId, prompt);
 
@@ -53,6 +61,19 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
 
             var lower = prompt.ToLowerInvariant();
 
+            // Edge Case: Check for impossible mathematical operations
+            if (lower.Contains("negative variance") || lower.Contains("divide by zero") || lower.Contains("negative volatility"))
+            {
+                return new NlpCommandResultDto
+                {
+                    CommandId = commandId,
+                    Prompt = prompt,
+                    Status = "Rejected",
+                    Explanation = "Contradiction detected: Statistical variance/volatility is mathematically non-negative (σ² ≥ 0). Command rejected without modifying canvas.",
+                    Mutations = new()
+                };
+            }
+
             // Detect Symbol (e.g. AAPL, MSFT, SPY, QQQ)
             string symbol = "AAPL";
             var symbolMatch = Regex.Match(prompt, @"\b(AAPL|MSFT|SPY|QQQ|BTC-USD|NVDA|TSLA)\b", RegexOptions.IgnoreCase);
@@ -60,6 +81,18 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
             {
                 symbol = symbolMatch.Value.ToUpperInvariant();
                 extractedArgs["symbol"] = symbol;
+            }
+            else if (!lower.Contains("volatil") && !lower.Contains("sma") && !lower.Contains("ema") && !lower.Contains("moving average") && !lower.Contains("price") && !lower.Contains("asset"))
+            {
+                // Ambiguous or unrecognized input per US2/AC3
+                return new NlpCommandResultDto
+                {
+                    CommandId = commandId,
+                    Prompt = prompt,
+                    Status = "Unresolved",
+                    Explanation = "Could not resolve analytical intent. Available tools: calculate_rolling_volatility, get_moving_average, create_signal_trigger.",
+                    Mutations = new()
+                };
             }
 
             var priceStreamId = Guid.NewGuid();
@@ -83,6 +116,30 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
                     period = p;
                 }
                 extractedArgs["period"] = period;
+
+                var volTool = _toolResolver?.Resolve(VolatilityToolHandler.ToolName);
+                if (volTool != null)
+                {
+                    var toolArgs = new Dictionary<string, string>
+                    {
+                        ["ticker"] = symbol,
+                        ["period"] = period.ToString(),
+                        ["annualize"] = "true"
+                    };
+                    var execResult = await volTool.ExecuteAsync(toolArgs, ct);
+                    if (!execResult.IsSuccess)
+                    {
+                        return new NlpCommandResultDto
+                        {
+                            CommandId = commandId,
+                            Prompt = prompt,
+                            Status = "Failed",
+                            ResolvedTool = VolatilityToolHandler.ToolName,
+                            Explanation = execResult.Error ?? "Volatility tool execution failed.",
+                            Mutations = new()
+                        };
+                    }
+                }
 
                 var volEntityId = Guid.NewGuid();
                 var volPayload = new
@@ -112,13 +169,36 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
                 // Detect nested trigger
                 if (lower.Contains("trigger") || lower.Contains("alert") || lower.Contains("exceed"))
                 {
-                    double threshold = 25.0;
+                    decimal threshold = 25.0m;
                     var threshMatch = Regex.Match(lower, @"(exceeds?|>|above|over)\s+(\d+(\.\d+)?)%?");
-                    if (threshMatch.Success && double.TryParse(threshMatch.Groups[2].Value, out var t))
+                    if (threshMatch.Success && decimal.TryParse(threshMatch.Groups[2].Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var t))
                     {
                         threshold = t;
                     }
                     extractedArgs["threshold"] = threshold;
+
+                    var triggerTool = _toolResolver?.Resolve(SignalTriggerToolHandler.ToolName);
+                    if (triggerTool != null)
+                    {
+                        var trigArgs = new Dictionary<string, string>
+                        {
+                            ["condition"] = "GreaterThan",
+                            ["threshold"] = threshold.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        };
+                        var trigExec = await triggerTool.ExecuteAsync(trigArgs, ct);
+                        if (!trigExec.IsSuccess)
+                        {
+                            return new NlpCommandResultDto
+                            {
+                                CommandId = commandId,
+                                Prompt = prompt,
+                                Status = "Failed",
+                                ResolvedTool = SignalTriggerToolHandler.ToolName,
+                                Explanation = trigExec.Error ?? "Signal trigger execution failed.",
+                                Mutations = new()
+                            };
+                        }
+                    }
 
                     var triggerId = Guid.NewGuid();
                     var triggerPayload = new
@@ -198,7 +278,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
                 explanation = $"Added {symbol} price stream entity to canvas.";
             }
 
-            return Task.FromResult(new NlpCommandResultDto
+            return new NlpCommandResultDto
             {
                 CommandId = commandId,
                 Prompt = prompt,
@@ -207,7 +287,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
                 ExtractedArguments = extractedArgs,
                 Mutations = mutations,
                 Explanation = explanation
-            });
+            };
         }
     }
 }

@@ -6,20 +6,27 @@
 
 ---
 
-## 1. Frontend Architecture & Canvas Runtime
+## 1. Frontend Architecture, Canvas Runtime & UI Stack
 
 ### Decision
-Implement the frontend workspace as a standalone React application (`FinancialStatisticsAdminiculum.Web`) built with **React 18/19**, **TypeScript**, **Vite**, **@xyflow/react (React Flow)**, and **Zustand**.
+Implement the frontend workspace as a standalone React application (`FinancialStatisticsAdminiculum.Web`) built with **React 18/19**, **TypeScript**, **Vite**, **Tailwind CSS**, **shadcn/ui**, **Zod**, **TanStack Query**, **Lucide React**, **Zustand**, and **@xyflow/react (React Flow)**.
 
-### Rationale
-- **Atomic Entity Manipulation**: React Flow provides first-class support for customizable node surfaces, custom input/output port handles, typed topological edge connections, smooth panning/zooming, and minimap navigation.
-- **Sub-200ms Reactivity (SC-001)**: Zustand allows selector-based atomic state subscriptions. When a user drags a slider on an upstream entity (e.g. rolling window period), only the affected node and its direct downstream dependents re-render and recalculate, completely bypassing global canvas re-renders.
-- **Fast Build & Dev Velocity**: Vite delivers instant Hot Module Replacement (HMR) and optimized ES module bundling for development and Docker containerization.
+The visual design is explicitly left open to customization: UI components use unopinionated shadcn/ui primitives (Radix UI) and Tailwind CSS utility classes driven by CSS variable theme tokens (`--background`, `--foreground`, `--primary`, `--border`, `--radius`, etc.), ensuring complete aesthetic flexibility without modifying component logic.
+
+### Rationale & Role of Each Stack Element
+- **Vite**: Provides instant Hot Module Replacement (HMR) and optimized ES module bundling for fast local development and lightweight Docker containerization.
+- **Tailwind CSS & shadcn/ui**: Provides an unopinionated, copy-and-own component architecture based on accessible Radix UI primitives. The visual design is not hardcoded; developers or users can easily customize color palettes, border radiuses, typography, and dark/light mode themes via CSS variables.
+- **Zod**: Enforces contract-first runtime schema validation across all boundaries: validating user-uploaded CSV parsing configurations, dynamic tool execution payloads from FunctionGemma, node parameter inputs, and exported/imported workspace JSON manifests. Inferred types (`z.infer<typeof Schema>`) ensure zero drift between runtime validation and compile-time TypeScript types.
+- **TanStack Query (React Query)**: Manages all server state, HTTP caching, optimistic updates, and background refetching for interactions with the .NET backend API (`WorkspacesController`, `MarketDataController`, `AiAnalysisController`). Decouples server data fetching and query lifecycle from UI rendering.
+- **Zustand**: Manages local, high-frequency canvas state (node positions, viewport zoom/pan, topological connections, active parameter values, and the undo/redo history stack). Selector-based subscriptions ensure sub-200ms reactive updates (SC-001) by re-rendering only affected nodes on parameter slider drag without triggering full canvas re-renders.
+- **Lucide React**: Supplies clean, consistent, scalable SVG iconography across canvas toolbars, entity operational health badges, and export actions.
+- **@xyflow/react (React Flow)**: Provides first-class support for customizable node surfaces, custom input/output port handles, typed topological edge connections, smooth panning/zooming, and minimap navigation.
 
 ### Alternatives Considered
+- *Hardcoded Component Styling (e.g. fixed CSS/styled-components theme)*: Rejected in favor of Tailwind CSS + shadcn/ui with CSS variables, which leaves visual design open to user and developer customization.
+- *Redux Toolkit / Context API*: Rejected because Redux introduces excessive action boilerplate and Context API causes widespread unnecessary re-renders across the canvas, violating the <200ms reactivity threshold. Zustand provides precise selector-based subscriptions.
 - *Custom HTML5 Canvas / WebGL*: Maximum theoretical throughput, but prohibitive maintenance overhead; embedding rich input sliders, formula badges, and dropdowns inside WebGL requires building a complete UI toolkit from scratch.
-- *Konva.js / Pixi.js*: Excellent 2D rendering, but lacks native React component lifecycle integration for node interiors, making complex DOM inputs and sparklines awkward.
-- *Redux Toolkit*: Robust, but introduces excessive boilerplate and action dispatch overhead compared to Zustand's lightweight, fine-grained store updates.
+- *Manual Fetch / Axios without TanStack Query*: Requires writing bespoke caching, loading state, error retry, and query invalidation logic across every component, creating boilerplate and potential state desynchronization.
 
 ---
 
@@ -105,8 +112,12 @@ Provide immediate, multi-tiered visual inspection:
 | :--- | :--- | :--- |
 | **Frontend Framework** | React 18+ with TypeScript | Robust ecosystem, typed safety, requested explicitly by user. |
 | **Frontend Build Tool** | Vite | Lightning-fast HMR, lightweight containerization, modern ESM. |
+| **UI Components & Styling** | Tailwind CSS & shadcn/ui (Radix UI) | Accessible, unopinionated primitives; visual design left open to customization via CSS variables. |
+| **Schema Validation** | Zod | Runtime validation for tool payloads, manifests, entity params, and CSV uploads with inferred types. |
+| **Server State & Caching**| TanStack Query (React Query) | Declarative data fetching, automatic caching, background polling, and optimistic mutations for API endpoints. |
 | **Canvas & Flow Engine** | `@xyflow/react` (React Flow) | Production-tested node-based canvas, custom ports/handles, high performance. |
 | **Frontend State & Reactivity** | Zustand | Selector-based fine-grained subscriptions ensuring sub-200ms reactive updates. |
+| **Iconography** | Lucide React | Clean, scalable, lightweight SVG icons for toolbars, badges, and controls. |
 | **Charting & Visuals** | Lightweight Charts & Chart.js / D3 | High FPS time-series rendering, custom statistical distributions and KDE plots. |
 | **Export Engines** | `html-to-image`, `jspdf`, native Blob streaming | Instant client-side PNG/SVG/PDF/CSV/JSON generation. |
 | **Backend API** | ASP.NET Core (.NET 8.0) Web API | Existing repository foundation, high throughput, Clean Architecture. |

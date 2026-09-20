@@ -29,6 +29,10 @@ namespace FinancialStatisticsAdminiculum.Api
     {
         public static async Task Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .CreateBootstrapLogger();
+
             try
             {
                 // uses ASP.NET Core WebApplication to create a services environment(IServiceCollection) with preconfigured defaults
@@ -55,8 +59,6 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 // Connection string appsetting.json
                 var connectionString = builder.Configuration.GetConnectionString("LocalConnection");
-                string modelPath = builder.Configuration.GetValue<string>("Paths:modelPath") ?? throw new InvalidOperationException(
-                    "Missing required configuration key 'Paths:modelPath'.");
 
                 // Add services to the container.
                 // Add Dbcontext service
@@ -94,7 +96,8 @@ namespace FinancialStatisticsAdminiculum.Api
                 // Register the Database Seeder
                 builder.Services.AddScoped<DatabaseSeeder>();
 
-                // Registe RabbitMQMessageConsumer
+                // Register RabbitMQ Message Publisher and Consumer
+                builder.Services.AddScoped<IMessagePublisher, RabbitMQMessagePublisher>();
                 builder.Services.AddHostedService<RabbitMQMessageConsumer>();
 
                 //Exception Handling
@@ -181,6 +184,7 @@ namespace FinancialStatisticsAdminiculum.Api
             catch (Exception ex)
             {
                 Log.Fatal(ex, "Application terminated unexpectedly");
+                Environment.ExitCode = 1;
             }
             finally
             {

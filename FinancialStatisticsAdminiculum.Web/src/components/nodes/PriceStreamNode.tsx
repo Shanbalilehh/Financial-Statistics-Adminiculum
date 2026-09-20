@@ -32,7 +32,7 @@ export const PriceStreamNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = ({ 
         <select
           value={symbol}
           onChange={handleSymbolChange}
-          className="w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs font-mono text-slate-200 focus:border-sky-500 focus:outline-none"
+          className="w-full rounded bg-muted border border-border px-2 py-1 text-xs font-mono text-card-foreground focus:border-primary focus:outline-none"
         >
           <option value="AAPL">AAPL (Apple)</option>
           <option value="MSFT">MSFT (Microsoft)</option>
@@ -41,7 +41,7 @@ export const PriceStreamNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = ({ 
           <option value="BTC-USD">BTC-USD (Bitcoin)</option>
         </select>
       </div>
-      <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+      <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
         <span>Window: {lookback}d</span>
         <span>Interval: 1d</span>
       </div>

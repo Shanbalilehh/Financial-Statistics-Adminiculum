@@ -8,6 +8,14 @@
 
 **Input**: User description: "Build a workspace application for experimenting and building financial concepts using the statistics knowledge or statistics view. The app should have a NLP entry and dynamic tools actionable via the NLP entry. Atomic entities for fine-grain customization and performance priority. Prioritize understanding not guideability, it is better for the user to build from its knowledge from the beginning than be guided throught a tutorial or similar. Everything immediately observable. Extreme exportability(pdf, png, etc)."
 
+## Clarifications
+
+### Session 2026-09-20
+- Q: How should workspace state be persisted across user sessions? (FR-021) → A: Hybrid persistence: Auto-save workspace topology and job states to PostgreSQL via backend API, with portable JSON manifest export/import.
+- Q: What data sources power the 'Time-Series Price Streams' atomic entity? (FR-003) → A: Self-contained for current release (built-in historical benchmarks, user CSV/JSON uploads, and synthetic tick generators; live broker/exchange feeds out of scope); custom WebSocket streaming endpoints deferred to future versions.
+- Q: How should the command bar behave when the AI inference service is offline or unreachable? (FR-008) → A: Diagnostic advisory: The command bar displays an "AI Offline" notice and disables NLP submission; canvas and all visual controls remain fully operational.
+- Q: How should the system handle delimiter, decimal separator, and date format variations in user-uploaded CSV files? (FR-003) → A: Auto-detect with preview: Automatically infer delimiter, decimal point, and date format, showing an instant preview table with manual override options before canvas ingestion.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Unguided First-Principles Construction via Atomic Entities (Priority: P1)
@@ -81,23 +89,29 @@ As an author, quantitative researcher, or decision-maker, I want to export my fi
 - **Extreme Asynchronous Ingestion & Heavy Datasets**: What happens when an atomic entity receives high-frequency streaming ticks or a historical series with over 1,000,000 observations? The system MUST maintain workspace interactivity by utilizing efficient windowed downsampling for visualization while retaining raw numeric fidelity for statistical computation.
 - **Cyclic Entity Wiring**: What happens if a user accidentally or deliberately connects entity outputs back into upstream inputs, forming an infinite recalculation loop? The workspace graph engine MUST detect circular dependencies immediately, halt propagation, and visually flag the offending connection with a clear cycle warning.
 - **Invalid or Malformed NLP Directives**: How does the system respond when an NLP command references non-existent financial symbols, impossible statistical operations (e.g., "compute negative variance"), or conflicting parameters? The NLP interface MUST reject the command with a clear, non-technical explanation of the contradiction and maintain the canvas in its prior clean state.
+- **AI Service Degradation or Outage**: What happens if the AI inference backend (FunctionGemma) is unreachable or times out? The command bar MUST display an "AI Offline" diagnostic notice and temporarily disable NLP prompt submission without freezing, blocking, or degrading visual canvas manipulation, manual wiring, or entity parameter adjustments.
+- **Ambiguous or Non-Standard CSV Formats**: What happens when an uploaded CSV uses uncommon delimiters, mixed datetime formats, or conflicting decimal separators? The upload preview MUST highlight detected columns, flag parsing ambiguities with visual warnings, and require explicit user confirmation before committing the dataset to downstream computational entities.
 - **Exporting Partially Computed or Incomplete Graphs**: What happens if the user requests a PDF or image export while some entities are unlinked or in an error state? The export engine MUST include clear visual annotations marking unlinked ports or invalid states without corrupting the layout of healthy entities.
 
 ## Requirements *(mandatory)*
 
-### Functional Requirements
-
 #### Workspace Canvas & Atomic Entities
 - **FR-001**: System MUST provide an unconstrained, non-guided canvas where users can freely place, arrange, configure, and delete atomic financial and statistical entities.
 - **FR-002**: System MUST NOT impose any mandatory introductory wizards, modal tours, or guided linear sequences upon workspace launch; the workspace MUST be immediately operational from first principles.
-- **FR-003**: System MUST provide a library of atomic entities covering fundamental financial statistics primitives, including but not limited to: Time-Series Price Streams, Rolling Window Aggregators, Volatility & Variance Estimators, Moving Averages (Simple, Exponential, Weighted), Distribution Analyzers (Skewness, Kurtosis, Quantiles), Correlation & Covariance Matrices, and Conditional Signal Triggers.
+- **FR-003**: System MUST provide a library of atomic entities covering fundamental financial statistics primitives, including but not limited to: Time-Series Price Streams (powered by built-in historical benchmarks, user-uploaded CSV/JSON datasets, and configurable synthetic tick generators), Rolling Window Aggregators, Volatility & Variance Estimators, Moving Averages (Simple, Exponential, Weighted), Distribution Analyzers (Skewness, Kurtosis, Quantiles), Correlation & Covariance Matrices, and Conditional Signal Triggers.
+- **FR-003a**: When a user uploads a custom CSV data file, the system MUST automatically detect the delimiter (comma, semicolon, tab), decimal separator (period vs. comma), and date-time format, presenting an instant tabular preview that allows users to verify or override detected settings before ingesting data into the canvas.
 - **FR-004**: Each atomic entity MUST expose discrete input and output data ports supporting typed time-series arrays, scalar parameters, and boolean conditions.
 - **FR-005**: Users MUST be able to visually connect compatible output ports of one atomic entity to input ports of another entity to establish continuous analytical data pipelines.
 - **FR-006**: When an entity's input data or internal parameters change, the system MUST execute reactive, deterministic recalculation across all downstream dependent entities with immediate UI updates.
 - **FR-007**: Each atomic entity MUST expose all underlying mathematical equations, parameter configurations, and intermediate calculation matrices directly in an inspectable panel.
 
+#### Explicit Out of Scope
+- Direct connections to live third-party broker or exchange market data feeds (e.g., Alpaca, Binance, Interactive Brokers) and automated trade or order execution are strictly out of scope for this release.
+- Custom external WebSocket streaming endpoints are deferred to future versions.
+- Real-time multi-user collaborative editing (multiplayer canvas) is out of scope for this release.
+
 #### NLP Entry & Dynamic Tool Execution
-- **FR-008**: System MUST provide an omnipresent natural language command entry allowing users to instruct, configure, and modify the workspace using plain English text.
+- **FR-008**: System MUST provide an omnipresent natural language command entry allowing users to instruct, configure, and modify the workspace using plain English text. When the AI inference service is offline or unreachable, the command bar MUST display an "AI Offline" diagnostic notice and disable prompt submission while preserving full manual canvas and visual tool interactivity.
 - **FR-009**: The NLP subsystem MUST maintain a registry of dynamic analytical tools and match user queries against tool capabilities using semantic intent parsing.
 - **FR-010**: The NLP engine MUST automatically extract required parameters from user commands (e.g., symbol names, period durations, statistical thresholds) and bind them to the appropriate tool execution contracts.
 - **FR-011**: Upon executing an NLP command, the system MUST automatically instantiate, configure, and link the required atomic entities on the canvas according to the user's intent.
@@ -114,11 +128,11 @@ As an author, quantitative researcher, or decision-maker, I want to export my fi
 - **FR-018**: System MUST support instant vector (SVG) and high-resolution raster (PNG, minimum 300 DPI) image export of individual atomic entity cards, charts, or selected canvas regions.
 - **FR-019**: System MUST generate publication-grade, multi-page PDF analytical reports capturing the entire workspace, containing rendered charts, parameter summaries, descriptive statistics tables, methodology documentation, and dependency maps.
 - **FR-020**: System MUST export raw and processed time-series data from any entity into structured CSV and JSON formats, preserving timestamps, metric labels, and full decimal precision.
-- **FR-021**: System MUST support exporting and importing complete workspace state manifests (including entity configurations, canvas coordinates, wiring connections, and NLP command histories) as portable JSON files.
+- **FR-021**: System MUST persist workspace topology, entity configurations, and analysis job states to PostgreSQL via backend APIs with automatic saving, while simultaneously supporting exporting and importing complete workspace state manifests (including entity configurations, canvas coordinates, wiring connections, and NLP command histories) as portable JSON files.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Workspace**: The root container encapsulating all instantiated atomic entities, topological wiring connections, canvas visual layouts, global time range settings, and revision history.
+- **Workspace**: The root container encapsulating all instantiated atomic entities, topological wiring connections, canvas visual layouts, global time range settings, and revision history, persisted to PostgreSQL with auto-save and exportable as a portable manifest.
 - **Atomic Entity**: An autonomous computational node featuring defined input ports, internal mathematical logic, customizable parameters, output ports, localized state, and real-time visualization widgets.
 - **Data Port & Connection**: A directional, typed data channel connecting an upstream entity's output to a downstream entity's input, transmitting continuous or discrete financial data arrays.
 - **Dynamic Tool**: A self-describing functional capability registerable in the NLP subsystem, exposing strict input parameter schemas, natural language triggers, and execution logic that modifies workspace topology.
@@ -142,7 +156,7 @@ As an author, quantitative researcher, or decision-maker, I want to export my fi
 ## Assumptions
 
 - **Target User Proficiency**: Target users possess foundational knowledge of financial and statistical concepts (e.g., standard deviation, moving averages, distributions, correlation) and prefer direct control over guided learning.
-- **Data Ingestion Scope**: The application provides built-in sample financial time series (historical market benchmark data and synthetic statistical distributions) while supporting direct user upload of custom tabular data (CSV/JSON).
+- **Data Ingestion Scope**: The application provides built-in sample financial time series (historical market benchmark data and synthetic statistical distribution generators) while supporting direct user upload of custom tabular data (CSV/JSON). Live external broker feeds and trade execution are out of scope; custom WebSocket streaming endpoints are deferred to future versions.
 - **Client Environment & Ergonomics**: The workspace is designed for desktop browser and workstation environments, leveraging mouse/trackpad pointer interactions and rich keyboard shortcuts for rapid navigation.
 - **NLP Execution Model**: NLP actions execute immediately on the canvas and notify the user via a non-blocking toast/audit badge with instant undo, rather than pausing workflow with blocking confirmation modals.
-- **Workspace Portability**: Workspaces are saved locally within the user's browser storage or session, with explicit export/import of portable workspace manifest files for offline archival or sharing.
+- **Workspace Portability & Persistence**: Workspaces and asynchronous analysis jobs automatically persist to the PostgreSQL backend via API, while supporting local browser caching and explicit export/import of portable workspace manifest files for offline archival or sharing.

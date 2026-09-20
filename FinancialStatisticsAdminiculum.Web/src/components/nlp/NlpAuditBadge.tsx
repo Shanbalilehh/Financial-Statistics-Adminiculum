@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useWorkspaceStore } from '../../store/workspaceStore';
-import { Sparkles, Undo2, X } from 'lucide-react';
+import { Sparkles, Undo2, X, WifiOff } from 'lucide-react';
 
 interface NlpAuditBadgeProps {
   message: string | null;
   onDismiss: () => void;
+  isAiOffline?: boolean;
+  onDismissOffline?: () => void;
 }
 
-export const NlpAuditBadge: React.FC<NlpAuditBadgeProps> = ({ message, onDismiss }) => {
+export const NlpAuditBadge: React.FC<NlpAuditBadgeProps> = ({
+  message,
+  onDismiss,
+  isAiOffline = false,
+  onDismissOffline,
+}) => {
   const undo = useWorkspaceStore((s) => s.undo);
   const [visible, setVisible] = useState(false);
 
@@ -23,6 +30,28 @@ export const NlpAuditBadge: React.FC<NlpAuditBadgeProps> = ({ message, onDismiss
       setVisible(false);
     }
   }, [message]);
+
+  if (isAiOffline) {
+    return (
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center space-x-3 rounded-xl border border-amber-500/40 bg-slate-900/95 px-4 py-2.5 shadow-2xl backdrop-blur ring-1 ring-amber-500/20 animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="flex items-center space-x-2 text-amber-400">
+          <WifiOff className="h-4 w-4" />
+          <span className="text-xs font-semibold text-amber-200">AI Offline:</span>
+        </div>
+        <p className="max-w-md text-xs text-amber-300 font-mono">
+          FunctionGemma inference service unreachable. Visual canvas is fully operable.
+        </p>
+        {onDismissOffline && (
+          <button
+            onClick={onDismissOffline}
+            className="rounded p-1 text-amber-400/70 hover:text-amber-200 transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    );
+  }
 
   if (!visible || !message) return null;
 

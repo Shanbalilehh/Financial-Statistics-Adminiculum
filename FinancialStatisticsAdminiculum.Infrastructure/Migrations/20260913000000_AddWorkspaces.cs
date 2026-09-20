@@ -1,11 +1,13 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace FinancialStatisticsAdminiculum.Infrastructure.Migrations
 {
-    /// <inheritdoc />
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260913000000_AddWorkspaces")]
     public partial class AddWorkspaces : Migration
     {
         /// <inheritdoc />

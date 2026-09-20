@@ -144,11 +144,14 @@ export function calculateMoments(data: number[]): StatisticalMoment {
     return sorted[base];
   };
 
+  const roundedVariance = Math.round(variance * 10000) / 10000;
+  const roundedStdDev = Math.sqrt(Math.max(0, roundedVariance));
+
   return {
     count: n,
     mean: Math.round(mean * 10000) / 10000,
-    variance: Math.round(variance * 10000) / 10000,
-    stdDev: Math.round(stdDev * 10000) / 10000,
+    variance: roundedVariance,
+    stdDev: roundedStdDev,
     skewness: Math.round(skewness * 1000) / 1000,
     kurtosis: Math.round(kurtosis * 1000) / 1000,
     quantiles: {

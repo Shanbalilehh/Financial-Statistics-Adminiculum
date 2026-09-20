@@ -49,4 +49,26 @@ describe('workspaceStore', () => {
     expect(added).toBe(false);
     expect(useWorkspaceStore.getState().edges.length).toBe(0);
   });
+
+  it('reverts all batch mutations in a single undo step', () => {
+    const store = useWorkspaceStore.getState();
+    expect(store.nodes.length).toBe(0);
+
+    const mutations = [
+      { action: 'ADD_ENTITY', payload: { id: 'p1', type: 'PriceStream', position: { x: 0, y: 0 } } },
+      { action: 'ADD_ENTITY', payload: { id: 'v1', type: 'VolatilityEstimator', position: { x: 200, y: 0 } } },
+      { action: 'ADD_CONNECTION', payload: { sourceEntityId: 'p1', targetEntityId: 'v1' } },
+    ];
+
+    store.applyBatchMutations(mutations);
+
+    expect(useWorkspaceStore.getState().nodes.length).toBe(2);
+    expect(useWorkspaceStore.getState().edges.length).toBe(1);
+
+    // Single undo reverts the entire batch
+    useWorkspaceStore.getState().undo();
+
+    expect(useWorkspaceStore.getState().nodes.length).toBe(0);
+    expect(useWorkspaceStore.getState().edges.length).toBe(0);
+  });
 });

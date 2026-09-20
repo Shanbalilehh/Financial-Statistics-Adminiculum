@@ -21,18 +21,19 @@ This guide defines step-by-step validation scenarios to verify that the Financia
 
 2. **Frontend Environment**:
    - Node.js 20+ and npm / pnpm installed
-   - React 18+ application scaffold in `FinancialStatisticsAdminiculum.Web`
+   - React 18+ application scaffold in `FinancialStatisticsAdminiculum.Web` (Vite, Tailwind CSS, shadcn/ui, Zod, TanStack Query, Lucide React, Zustand)
 
 3. **Starting the Services**:
    ```bash
    # Terminal 1: Spin up container dependencies (PostgreSQL, RabbitMQ, Seq, FunctionGemma)
-   docker-compose up -d db RabbitMQ seq api
+   docker compose up -d db RabbitMQ seq api
 
    # Terminal 2: Run .NET Web API
    dotnet run --project FinancialStatisticsAdminiculum.Api
 
-   # Terminal 3: Run React Web Frontend
+   # Terminal 3: Run React Web Frontend (Vite dev server)
    cd FinancialStatisticsAdminiculum.Web
+   npm install
    npm run dev
    ```
 

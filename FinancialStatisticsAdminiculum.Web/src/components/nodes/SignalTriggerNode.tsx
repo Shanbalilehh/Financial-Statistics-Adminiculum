@@ -2,6 +2,7 @@ import React from 'react';
 import { Node, NodeProps } from '@xyflow/react';
 import { BaseEntityNode } from './BaseEntityNode';
 import { WorkspaceNodeData, useWorkspaceStore } from '../../store/workspaceStore';
+import { Input } from '@/components/ui/input';
 
 export const SignalTriggerNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = ({ id, data }) => {
   const nodeData = data as WorkspaceNodeData;
@@ -23,34 +24,33 @@ export const SignalTriggerNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = (
       sparkline={sparkline}
       currentMetric={isTriggered ? 'ACTIVE ALERT' : 'Normal'}
       metricLabel="Trigger State"
-      sparklineColor={isTriggered ? '#ef4444' : '#10b981'}
     >
-      <div className="space-y-1.5 pt-1">
-        <div className="flex items-center justify-between text-[11px] text-slate-400">
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
           <span>{condition === 'GreaterThan' ? '> Threshold' : '< Threshold'}</span>
-          <span className="font-mono text-slate-200">{threshold}</span>
+          <span className="font-mono text-card-foreground">{threshold}</span>
         </div>
         <div className="flex space-x-1">
           {['GreaterThan', 'LessThan'].map((c) => (
             <button
               key={c}
               onClick={() => updateNodeParameters(id, { condition: c })}
-              className={`flex-1 py-1 rounded text-[10px] font-mono ${
+              className={`flex-1 py-1 rounded text-[10px] font-mono transition-colors ${
                 condition === c
-                  ? 'bg-rose-600 text-white font-semibold'
-                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-destructive text-destructive-foreground font-semibold'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
               }`}
             >
               {c === 'GreaterThan' ? 'Val > X' : 'Val < X'}
             </button>
           ))}
         </div>
-        <input
+        <Input
           type="number"
           step="0.5"
           value={threshold}
           onChange={(e) => updateNodeParameters(id, { threshold: Number(e.target.value) })}
-          className="w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs font-mono text-slate-200 focus:border-rose-500 focus:outline-none"
+          className="h-7 text-xs font-mono"
         />
       </div>
     </BaseEntityNode>

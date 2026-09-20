@@ -2,6 +2,7 @@ import React from 'react';
 import { Node, NodeProps } from '@xyflow/react';
 import { BaseEntityNode } from './BaseEntityNode';
 import { WorkspaceNodeData, useWorkspaceStore } from '../../store/workspaceStore';
+import { Slider } from '@/components/ui/slider';
 
 export const VolatilityEstimatorNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = ({ id, data }) => {
   const nodeData = data as WorkspaceNodeData;
@@ -23,21 +24,19 @@ export const VolatilityEstimatorNode: React.FC<NodeProps<Node<WorkspaceNodeData>
       sparkline={sparkline}
       currentMetric={formattedVol}
       metricLabel="Annualized Vol"
-      sparklineColor="#f59e0b"
     >
-      <div className="space-y-1.5 pt-1">
-        <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span>Lookback: <strong className="font-mono text-slate-200">{period}d</strong></span>
-          <span className="text-[10px] text-slate-500 font-mono">Factor: √{factor}</span>
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>Lookback: <strong className="font-mono text-card-foreground">{period}d</strong></span>
+          <span className="text-[10px] text-muted-foreground font-mono">Factor: √{factor}</span>
         </div>
-        <input
-          type="range"
-          min="5"
-          max="120"
-          step="5"
-          value={period}
-          onChange={(e) => updateNodeParameters(id, { period: Number(e.target.value) })}
-          className="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg appearance-none"
+        <Slider
+          min={5}
+          max={120}
+          step={5}
+          value={[period]}
+          onValueChange={(vals) => updateNodeParameters(id, { period: vals[0] })}
+          className="pt-1"
         />
       </div>
     </BaseEntityNode>

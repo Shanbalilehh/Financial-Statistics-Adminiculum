@@ -26,7 +26,7 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Tools
             {
                 "threshold", new GemmaParameter
                 {
-                    Type = "FLOAT",
+                    Type = "NUMBER",
                     Description = "Numerical cutoff value for trigger condition"
                 }
             }
@@ -40,13 +40,14 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Tools
                 condition = cond.Contains("less", StringComparison.OrdinalIgnoreCase) ? "LessThan" : "GreaterThan";
             }
 
-            double threshold = 25.0;
-            if (arguments.TryGetValue("threshold", out var threshStr) && double.TryParse(threshStr, out var thresh))
+            decimal threshold = 25.0m;
+            if (arguments.TryGetValue("threshold", out var threshStr) && 
+                decimal.TryParse(threshStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var thresh))
             {
                 threshold = thresh;
             }
 
-            var jsonResponse = $"{{\"tool\": \"{ToolName}\", \"action\": \"ADD_ENTITY\", \"entityType\": \"SignalTrigger\", \"parameters\": {{\"condition\": \"{condition}\", \"threshold\": {threshold}}}}}";
+            var jsonResponse = $"{{\"tool\": \"{ToolName}\", \"action\": \"ADD_ENTITY\", \"entityType\": \"SignalTrigger\", \"parameters\": {{\"condition\": \"{condition}\", \"threshold\": {threshold.ToString(System.Globalization.CultureInfo.InvariantCulture)}}}}}";
             return Task.FromResult(ToolExecutionResult.Success(jsonResponse));
         }
     }

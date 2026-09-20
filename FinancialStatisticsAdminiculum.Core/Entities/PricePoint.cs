@@ -1,4 +1,4 @@
-﻿namespace FinancialStatisticsAdminiculum.Core.Entities
+namespace FinancialStatisticsAdminiculum.Core.Entities
 {
     public class PricePoint
     {
@@ -16,7 +16,7 @@
         }
 
         public int Id { get; private set; } // PK
-        public string AssetTicker { get; private set; } // FK
+        public string AssetTicker { get; private set; } = null!; // FK
         public DateTime Timestamp { get; private set; }
         public decimal Value { get; private set; } // The single atomic price
     }

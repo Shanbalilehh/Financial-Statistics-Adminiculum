@@ -41,9 +41,10 @@ export function computeKde(data: number[], numPoints = 40): KdePoint[] {
       sumKernel += Math.exp(-0.5 * u * u) / sqrt2Pi;
     }
     const density = sumKernel / (n * bandwidth);
+    const roundedDensity = Math.round(density * 10000) / 10000;
     points[i] = {
       x: Math.round(x * 1000) / 1000,
-      density: Math.round(density * 10000) / 10000,
+      density: roundedDensity > 0 ? roundedDensity : (density > 0 ? 0.0001 : 0),
     };
   }
 
@@ -100,14 +101,14 @@ export function getFormulaTrace(type: EntityType, parameters: Record<string, any
       const m = parameters.method || 'SMA';
       if (m === 'EMA') {
         const alpha = (2 / (p + 1)).toFixed(4);
-        return `\\text{EMA}_t = \\alpha \\cdot P_t + (1 - \\alpha) \\cdot \\text{EMA}_{t-1} \\quad \\text{where } \\alpha = \\frac{2}{${p} + 1} = ${alpha}`;
+        return `EMA_{t} = \\alpha \\cdot P_t + (1 - \\alpha) \\cdot \\text{EMA}_{t-1} \\quad \\text{where } \\alpha = \\frac{2}{${p} + 1} = ${alpha}`;
       }
-      return `\\text{SMA}_t = \\frac{1}{N} \\sum_{i=0}^{N-1} P_{t-i} \\quad \\text{with window } N = ${p}`;
+      return `SMA_{t} = \\frac{1}{N} \\sum_{i=0}^{N-1} P_{t-i} \\quad \\text{with window } N = ${p}`;
     }
     case 'VolatilityEstimator': {
       const n = parameters.period || 30;
       const factor = parameters.annualizationFactor || 252;
-      return `\\sigma_{\\text{ann}} = \\sqrt{${factor}} \\times \\sqrt{\\frac{1}{N-1} \\sum_{i=1}^{N} (r_{t-i} - \\bar{r})^2} \\quad (N = ${n}, \\text{Factor} = \\sqrt{${factor}} = ${Math.sqrt(factor).toFixed(2)})`;
+      return `\\sigma_{\\text{ann}} = \\sqrt{${factor}} \\times \\sqrt{\\frac{1}{N-1} \\sum_{i=1}^{N} (r_{t-i} - \\bar{r})^2} \\quad (N = ${n}, \\text{Factor} = \\text{sqrt(${factor})} = ${Math.sqrt(factor).toFixed(2)})`;
     }
     case 'SignalTrigger': {
       const thresh = parameters.threshold || 25.0;

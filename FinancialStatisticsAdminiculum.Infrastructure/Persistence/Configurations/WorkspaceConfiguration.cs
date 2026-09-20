@@ -25,21 +25,27 @@ namespace FinancialStatisticsAdminiculum.Infrastructure.Persistence.Configuratio
             builder.Property(w => w.UpdatedAt)
                 .IsRequired();
 
-            builder.OwnsOne(w => w.Viewport, v =>
-            {
-                v.ToJson();
-            });
+            builder.Property(w => w.Viewport)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<ViewportState>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new ViewportState());
 
-            builder.OwnsMany(w => w.Entities, e =>
-            {
-                e.ToJson();
-                e.OwnsOne(entity => entity.Position);
-            });
+            builder.Property(w => w.Entities)
+                .HasField("_entities")
+                .UsePropertyAccessMode(PropertyAccessMode.Field)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<AtomicEntity>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<AtomicEntity>());
 
-            builder.OwnsMany(w => w.Connections, c =>
-            {
-                c.ToJson();
-            });
+            builder.Property(w => w.Connections)
+                .HasField("_connections")
+                .UsePropertyAccessMode(PropertyAccessMode.Field)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null!),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<EntityConnection>>(v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<EntityConnection>());
         }
     }
 }

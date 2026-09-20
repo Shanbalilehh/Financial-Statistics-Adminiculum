@@ -10,7 +10,7 @@ COPY FinancialStatisticsAdminiculum.Infrastructure/*.csproj ./FinancialStatistic
 COPY FinancialStatisticsAdminiculum.Application/*.csproj ./FinancialStatisticsAdminiculum.Application/
 COPY FinancialStatisticsAdminiculum.Core/*.csproj ./FinancialStatisticsAdminiculum.Core/
 COPY Shared/*.csproj ./Shared/
-RUN dotnet restore
+RUN dotnet restore FinancialStatisticsAdminiculum.Api/FinancialStatisticsAdminiculum.Api.csproj
 
 # Stage 3: Copy Model, copy everything else and build app
 COPY . .

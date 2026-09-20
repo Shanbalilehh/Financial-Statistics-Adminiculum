@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Node, Edge, Connection, addEdge } from '@xyflow/react';
 import { EntityType, EntityStatus, DiagnosticRecord } from '../types/workspace';
 import { calculateSma, calculateEma, calculateRollingVolatility, calculateMoments } from '../kernel/statisticsKernel';
+import { PersistenceService } from '../services/persistenceService';
 
 export interface WorkspaceNodeData extends Record<string, unknown> {
   id: string;
@@ -41,6 +42,7 @@ export interface WorkspaceState {
   recalculateGraph: () => void;
   resetWorkspace: () => void;
   loadWorkspace: (id: string, name: string, nodes: Node<WorkspaceNodeData>[], edges: Edge[]) => void;
+  applyBatchMutations: (mutations: Array<{ action: string; payload: any }>) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -66,7 +68,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   history: [],
   future: [],
 
-  setWorkspaceName: (name) => set({ workspaceName: name }),
+  setWorkspaceName: (name) => {
+    set({ workspaceName: name });
+    const { workspaceId, nodes, edges } = get();
+    PersistenceService.triggerAutoSave(workspaceId, name, nodes, edges);
+  },
 
   selectNode: (id) => set({ selectedNodeId: id }),
 
@@ -261,8 +267,46 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
               );
               break;
             }
+            case 'RollingWindow': {
+              const windowSize = Number(nodeData.parameters.windowSize || 30);
+              calculatedSeries = [];
+              for (let i = 0; i < firstInputSeries.length; i++) {
+                const slice = firstInputSeries.slice(Math.max(0, i - windowSize + 1), i + 1);
+                const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+                calculatedSeries.push(Math.round(avg * 10000) / 10000);
+              }
+              break;
+            }
+            case 'CorrelationMatrix': {
+              const window = 30;
+              calculatedSeries = [];
+              for (let i = 0; i < firstInputSeries.length; i++) {
+                if (i < 2) {
+                  calculatedSeries.push(1.0);
+                } else {
+                  const slice = firstInputSeries.slice(Math.max(0, i - window + 1), i + 1);
+                  const m = calculateMoments(slice);
+                  let cov = 0;
+                  for (let j = 1; j < slice.length; j++) {
+                    cov += (slice[j] - m.mean) * (slice[j - 1] - m.mean);
+                  }
+                  const r = (slice.length > 2 && m.variance > 0) ? cov / ((slice.length - 1) * m.variance) : 1.0;
+                  calculatedSeries.push(Math.round(Math.max(-1, Math.min(1, r)) * 1000) / 1000);
+                }
+              }
+              break;
+            }
             case 'DistributionAnalyzer': {
-              calculatedSeries = [...firstInputSeries];
+              const moments = calculateMoments(firstInputSeries);
+              calculatedSeries = moments.stdDev > 0
+                ? firstInputSeries.map((v) => Math.round(((v - moments.mean) / moments.stdDev) * 100) / 100)
+                : [...firstInputSeries];
+              break;
+            }
+            case 'CustomTransform': {
+              const mult = Number(nodeData.parameters.multiplier ?? 1.0);
+              const offset = Number(nodeData.parameters.offset ?? 0.0);
+              calculatedSeries = firstInputSeries.map((v) => Math.round((v * mult + offset) * 10000) / 10000);
               break;
             }
             default:
@@ -297,12 +341,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }
     }
 
+    const updatedNodes = nodes.map((n) => ({
+      ...n,
+      data: updatedNodesMap.get(n.id) || n.data,
+    }));
+
     set({
-      nodes: nodes.map((n) => ({
-        ...n,
-        data: updatedNodesMap.get(n.id) || n.data,
-      })),
+      nodes: updatedNodes,
     });
+
+    const { workspaceId, workspaceName } = get();
+    PersistenceService.triggerAutoSave(workspaceId, workspaceName, updatedNodes, edges);
   },
 
   resetWorkspace: () => {
@@ -325,6 +374,74 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       history: [],
       future: [],
     });
+    get().recalculateGraph();
+  },
+
+  applyBatchMutations: (mutations) => {
+    if (!mutations || mutations.length === 0) return;
+
+    const { nodes, edges, history } = get();
+    // Record current state snapshot ONCE for atomic undo
+    const snapshot = { nodes, edges };
+
+    let newNodes = [...nodes];
+    let newEdges = [...edges];
+    const idMap = new Map<string, string>();
+
+    for (const mut of mutations) {
+      if (mut.action === 'ADD_ENTITY') {
+        const p = mut.payload;
+        const type = p.type as EntityType;
+        const id = `node_${type}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        if (p.id) idMap.set(p.id, id);
+
+        const params = { ...(DEFAULT_PARAMS[type] || {}), ...(p.parameters || {}) };
+        const newNode: Node<WorkspaceNodeData> = {
+          id,
+          type,
+          position: p.position || { x: 300, y: 200 },
+          data: {
+            id,
+            type,
+            label: p.label || `${type}`,
+            parameters: params,
+            status: 'Ready',
+            calculatedValues: {
+              series: [],
+              sparkline: [],
+              metrics: {},
+            },
+          },
+        };
+        newNodes.push(newNode);
+      } else if (mut.action === 'ADD_CONNECTION') {
+        const c = mut.payload;
+        const source = idMap.get(c.sourceEntityId) || c.sourceEntityId;
+        const target = idMap.get(c.targetEntityId) || c.targetEntityId;
+
+        if (source && target && source !== target) {
+          newEdges = addEdge(
+            {
+              id: c.id || `edge_${source}_${target}`,
+              source,
+              target,
+              sourceHandle: c.sourcePortId || 'out_series',
+              targetHandle: c.targetPortId || 'in_series',
+              animated: true,
+            },
+            newEdges
+          );
+        }
+      }
+    }
+
+    set({
+      history: [...history, snapshot],
+      future: [],
+      nodes: newNodes,
+      edges: newEdges,
+    });
+
     get().recalculateGraph();
   },
 

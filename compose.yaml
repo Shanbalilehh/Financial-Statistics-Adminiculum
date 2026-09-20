@@ -9,7 +9,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__LocalConnection=Host=db;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://seq:5341/ingest/otlp/v1/traces
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://seq:80/ingest/otlp/v1/traces
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - RabbitMQ__Host=RabbitMQ
     depends_on:
@@ -91,14 +91,15 @@ services:
         condition: service_healthy
     environment:
       - Paths__modelPath=/app/models/functiongemma_oga
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://seq:5341/ingest/otlp/v1/traces
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://seq:80/ingest/otlp/v1/traces
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - RabbitMQ__Host=RabbitMQ
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 5m
+      interval: 10s
       timeout: 10s
       retries: 3
+      start_period: 30s
     restart: always
 
 

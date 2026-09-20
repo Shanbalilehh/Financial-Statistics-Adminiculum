@@ -2,6 +2,7 @@ import React from 'react';
 import { Node, NodeProps } from '@xyflow/react';
 import { BaseEntityNode } from './BaseEntityNode';
 import { WorkspaceNodeData, useWorkspaceStore } from '../../store/workspaceStore';
+import { Slider } from '@/components/ui/slider';
 
 export const MovingAverageNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = ({ id, data }) => {
   const nodeData = data as WorkspaceNodeData;
@@ -22,20 +23,19 @@ export const MovingAverageNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = (
       sparkline={sparkline}
       currentMetric={currentVal}
       metricLabel={`${method} Value`}
-      sparklineColor="#a855f7"
     >
-      <div className="space-y-1.5 pt-1">
-        <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span>Period: <strong className="font-mono text-slate-200">{period}</strong></span>
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>Period: <strong className="font-mono text-card-foreground">{period}</strong></span>
           <div className="flex space-x-1">
             {['SMA', 'EMA'].map((m) => (
               <button
                 key={m}
                 onClick={() => updateNodeParameters(id, { method: m })}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium transition-colors ${
                   method === m
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {m}
@@ -43,14 +43,13 @@ export const MovingAverageNode: React.FC<NodeProps<Node<WorkspaceNodeData>>> = (
             ))}
           </div>
         </div>
-        <input
-          type="range"
-          min="5"
-          max="200"
-          step="5"
-          value={period}
-          onChange={(e) => updateNodeParameters(id, { period: Number(e.target.value) })}
-          className="w-full accent-purple-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg appearance-none"
+        <Slider
+          min={5}
+          max={200}
+          step={5}
+          value={[period]}
+          onValueChange={(vals) => updateNodeParameters(id, { period: vals[0] })}
+          className="pt-1"
         />
       </div>
     </BaseEntityNode>

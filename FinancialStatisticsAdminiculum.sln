@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialStatisticsAdminicu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialStatisticsAdminiculum.Infrastructure", "FinancialStatisticsAdminiculum.Infrastructure\FinancialStatisticsAdminiculum.Infrastructure.csproj", "{DA173E24-F265-4036-B55E-994F9B2B3392}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialStatisticsAdminiculum.Application.Tests", "FinancialStatisticsAdminiculum.Application.Tests\FinancialStatisticsAdminiculum.Application.Tests.csproj", "{57512948-04D8-40DC-9128-6B2BBBC4713F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialStatisticsAdminiculum.Api.Tests", "FinancialStatisticsAdminiculum.Api.Tests\FinancialStatisticsAdminiculum.Api.Tests.csproj", "{9F5B2196-1AB5-4D20-AA00-8D09489E5AB0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +47,14 @@ Global
 		{DA173E24-F265-4036-B55E-994F9B2B3392}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA173E24-F265-4036-B55E-994F9B2B3392}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA173E24-F265-4036-B55E-994F9B2B3392}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57512948-04D8-40DC-9128-6B2BBBC4713F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57512948-04D8-40DC-9128-6B2BBBC4713F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57512948-04D8-40DC-9128-6B2BBBC4713F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57512948-04D8-40DC-9128-6B2BBBC4713F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F5B2196-1AB5-4D20-AA00-8D09489E5AB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F5B2196-1AB5-4D20-AA00-8D09489E5AB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F5B2196-1AB5-4D20-AA00-8D09489E5AB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F5B2196-1AB5-4D20-AA00-8D09489E5AB0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -107,8 +107,43 @@ namespace FinancialStatisticsAdminiculum.Core.Entities
                 return; // Idempotent connection add
             }
 
+            if (HasPath(connection.TargetEntityId, connection.SourceEntityId))
+            {
+                throw new InvalidOperationException("Adding this connection would create a circular dependency in the entity graph.");
+            }
+
             _connections.Add(connection);
             UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        private bool HasPath(Guid from, Guid to)
+        {
+            if (from == to) return true;
+
+            var visited = new HashSet<Guid>();
+            var queue = new Queue<Guid>();
+            queue.Enqueue(from);
+            visited.Add(from);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                foreach (var conn in _connections)
+                {
+                    if (conn.SourceEntityId == current)
+                    {
+                        if (conn.TargetEntityId == to)
+                            return true;
+
+                        if (visited.Add(conn.TargetEntityId))
+                        {
+                            queue.Enqueue(conn.TargetEntityId);
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         public void RemoveConnection(string connectionId)

@@ -1,4 +1,4 @@
-﻿namespace FinancialStatisticsAdminiculum.Core.Entities
+namespace FinancialStatisticsAdminiculum.Core.Entities
 {
     public class Asset
     {
@@ -22,9 +22,9 @@
         public int Id { get; private set; }
 
         // Surrogate Key for DB/PK (we will use Ticker as PK via configuration)
-        public string Ticker { get; private set; }
-        public string Name { get; private set; }
-        public string AssetType { get; private set; }
+        public string Ticker { get; private set; } = null!;
+        public string Name { get; private set; } = null!;
+        public string AssetType { get; private set; } = null!;
 
         // Navigation Property (One Asset has many DataPoints)
         private readonly List<PricePoint> _pricePoints = new();
