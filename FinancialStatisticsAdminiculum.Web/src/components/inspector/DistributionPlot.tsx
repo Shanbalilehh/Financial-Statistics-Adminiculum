@@ -1,77 +1,165 @@
 import React from 'react';
-import { computeKde } from '../../kernel/distributionCalculations';
+import { Group } from '@visx/group';
+import { LinePath, AreaClosed, Bar } from '@visx/shape';
+import { scaleLinear } from '@visx/scale';
+import { curveBasis } from '@visx/curve';
+import { LinearGradient } from '@visx/gradient';
+import { AxisBottom, AxisLeft } from '@visx/axis';
+import { GridRows, GridColumns } from '@visx/grid';
+import { computeKde, KdePoint } from '../../kernel/distributionCalculations';
 
-interface DistributionPlotProps {
+export interface DistributionPlotProps {
   series?: number[];
   height?: number;
+  width?: number;
 }
 
 export const DistributionPlot: React.FC<DistributionPlotProps> = ({
   series = [],
-  height = 140,
+  height = 180,
+  width = 300,
 }) => {
   if (!series || series.length < 3) {
     return (
       <div 
         style={{ height }}
-        className="flex items-center justify-center rounded-lg border border-slate-800 bg-slate-950/60 text-xs text-slate-500 font-mono"
+        className="flex items-center justify-center rounded-lg border border-border/50 bg-card text-xs text-muted-foreground font-mono"
       >
         Insufficient observations for distribution plot (need ≥ 3)
       </div>
     );
   }
 
-  const kdePoints = computeKde(series, 40);
-  const maxDensity = Math.max(...kdePoints.map((p) => p.density)) || 1;
+  const margin = { top: 16, right: 16, bottom: 28, left: 36 };
+  const innerWidth = Math.max(10, width - margin.left - margin.right);
+  const innerHeight = Math.max(10, height - margin.top - margin.bottom);
+
+  // Compute KDE points
+  const kdePoints: KdePoint[] = computeKde(series, 40);
   const minX = Math.min(...kdePoints.map((p) => p.x));
   const maxX = Math.max(...kdePoints.map((p) => p.x));
-  const rangeX = maxX - minX || 1;
+  const maxDensity = Math.max(...kdePoints.map((p) => p.density)) || 1;
 
-  const width = 280;
+  // Compute simple histogram bins (10 bins)
+  const numBins = 10;
+  const binWidth = (maxX - minX) / numBins || 1;
+  const bins = Array.from({ length: numBins }, (_, i) => ({
+    x0: minX + i * binWidth,
+    x1: minX + (i + 1) * binWidth,
+    count: 0,
+  }));
 
-  // Build SVG path for KDE curve
-  const pointsStr = kdePoints
-    .map((pt, idx) => {
-      const x = ((pt.x - minX) / rangeX) * width;
-      const y = height - (pt.density / maxDensity) * (height - 20) - 10;
-      return `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(' ');
+  series.forEach((val) => {
+    const idx = Math.min(numBins - 1, Math.max(0, Math.floor((val - minX) / binWidth)));
+    if (bins[idx]) bins[idx].count++;
+  });
 
-  // Fill area path closing down to bottom
-  const areaPath = `${pointsStr} L ${width} ${height - 10} L 0 ${height - 10} Z`;
+  const maxBinCount = Math.max(...bins.map((b) => b.count)) || 1;
+
+  // Visx scales
+  const xScale = scaleLinear<number>({
+    domain: [minX, maxX],
+    range: [0, innerWidth],
+  });
+
+  const yScale = scaleLinear<number>({
+    domain: [0, maxDensity * 1.1],
+    range: [innerHeight, 0],
+  });
+
+  const yHistScale = scaleLinear<number>({
+    domain: [0, maxBinCount],
+    range: [innerHeight, 0],
+  });
 
   return (
-    <div className="space-y-1.5 rounded-lg border border-slate-800 bg-slate-950/60 p-3">
-      <div className="flex items-center justify-between text-[11px] text-slate-400">
-        <span className="font-semibold uppercase tracking-wider">Empirical Probability Density (KDE)</span>
-        <span className="font-mono text-[10px] text-sky-400">Gaussian Kernel</span>
+    <div className="space-y-1.5 rounded-lg border border-border/60 bg-card/80 p-3">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span className="font-semibold uppercase tracking-wider">Empirical Distribution (KDE & Histogram)</span>
+        <span className="font-mono text-[10px] text-primary">React Visx Pure SVG</span>
       </div>
 
-      <div className="relative overflow-hidden rounded bg-slate-900/80 p-1 border border-slate-800">
+      <div className="relative overflow-hidden rounded bg-slate-950/80 p-1 border border-border/40">
         <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-          {/* Shaded Area */}
-          <path d={areaPath} fill="url(#kdeGradient)" opacity="0.35" />
-          
-          {/* Density Line */}
-          <path
-            d={pointsStr}
-            fill="none"
-            stroke="#38bdf8"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          <LinearGradient id="visx-kde-gradient" from="hsl(var(--primary))" to="hsl(var(--primary))" toOpacity={0} />
 
-          <defs>
-            <linearGradient id="kdeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#38bdf8" />
-              <stop offset="100%" stopColor="#0369a1" stopOpacity="0" />
-            </linearGradient>
-          </defs>
+          <Group left={margin.left} top={margin.top}>
+            {/* Background Grid */}
+            <GridRows scale={yScale} width={innerWidth} stroke="hsl(var(--border))" strokeOpacity={0.25} />
+            <GridColumns scale={xScale} height={innerHeight} stroke="hsl(var(--border))" strokeOpacity={0.25} />
+
+            {/* Binned Histogram Bars */}
+            {bins.map((bin, i) => {
+              const barX = xScale(bin.x0);
+              const barWidth = Math.max(0, xScale(bin.x1) - barX - 1);
+              const barHeight = innerHeight - yHistScale(bin.count);
+              return (
+                <Bar
+                  key={`hist-bar-${i}`}
+                  x={barX}
+                  y={innerHeight - barHeight}
+                  width={barWidth}
+                  height={barHeight}
+                  fill="hsl(var(--muted-foreground))"
+                  fillOpacity={0.25}
+                  stroke="hsl(var(--border))"
+                  strokeWidth={0.5}
+                />
+              );
+            })}
+
+            {/* KDE Area */}
+            <AreaClosed<KdePoint>
+              data={kdePoints}
+              x={(d) => xScale(d.x)}
+              y={(d) => yScale(d.density)}
+              yScale={yScale}
+              curve={curveBasis}
+              fill="url(#visx-kde-gradient)"
+              fillOpacity={0.4}
+            />
+
+            {/* KDE Line Path */}
+            <LinePath<KdePoint>
+              data={kdePoints}
+              x={(d) => xScale(d.x)}
+              y={(d) => yScale(d.density)}
+              curve={curveBasis}
+              stroke="hsl(var(--primary))"
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
+
+            {/* Axes */}
+            <AxisBottom
+              top={innerHeight}
+              scale={xScale}
+              numTicks={4}
+              stroke="hsl(var(--border))"
+              tickStroke="hsl(var(--border))"
+              tickLabelProps={() => ({
+                fill: 'hsl(var(--muted-foreground))',
+                fontSize: 9,
+                textAnchor: 'middle',
+              })}
+            />
+            <AxisLeft
+              scale={yScale}
+              numTicks={3}
+              stroke="hsl(var(--border))"
+              tickStroke="hsl(var(--border))"
+              tickLabelProps={() => ({
+                fill: 'hsl(var(--muted-foreground))',
+                fontSize: 9,
+                textAnchor: 'end',
+                dx: -4,
+                dy: 3,
+              })}
+            />
+          </Group>
         </svg>
 
-        <div className="flex justify-between text-[9px] font-mono text-slate-500 pt-1">
+        <div className="flex justify-between text-[9px] font-mono text-muted-foreground pt-1">
           <span>Min: {minX.toFixed(2)}</span>
           <span>Max: {maxX.toFixed(2)}</span>
         </div>

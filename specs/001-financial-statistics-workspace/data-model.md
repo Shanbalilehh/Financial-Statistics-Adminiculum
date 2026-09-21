@@ -290,3 +290,71 @@ export type Workspace = z.infer<typeof WorkspaceSchema>;
 export type WorkspaceManifest = z.infer<typeof WorkspaceManifestSchema>;
 export type CsvUploadPreview = z.infer<typeof CsvUploadPreviewSchema>;
 ```
+
+---
+
+## 8. Visualization & Model Microservice Data Contracts
+
+### 8.1 React Visx Graphic Data Models
+React Visx primitives consume typed data arrays directly into SVG scales and shapes:
+
+```typescript
+// Sparkline & Time-Series Points for @visx/shape (LinePath, AreaClosed)
+export interface VisxDataPoint {
+  date: Date | string | number;
+  value: number;
+}
+
+// Binned Histogram Bar for @visx/shape (Bar)
+export interface VisxHistogramBin {
+  x0: number; // Bin lower bound
+  x1: number; // Bin upper bound
+  count: number; // Frequency count
+  density: number; // Empirical probability density
+}
+
+// Kernel Density Estimate (KDE) Point for @visx/curve & @visx/shape
+export interface VisxKdePoint {
+  x: number; // Domain value
+  density: number; // Estimated density f(x)
+}
+```
+
+### 8.2 Containerized Model Service HTTP API (`docker run`)
+The containerized model microservice exposes a lightweight REST contract on port `8080` consumed by the .NET backend:
+
+```json
+// POST /v1/chat/completions or /predict
+{
+  "prompt": "Plot a 20-day SMA for AAPL and highlight kurtosis exceeding 3.0",
+  "tools": [
+    {
+      "name": "create_moving_average",
+      "description": "Calculates simple, exponential, or weighted moving average.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "period": { "type": "integer", "default": 20 },
+          "method": { "type": "string", "enum": ["SMA", "EMA", "WMA"] }
+        },
+        "required": ["period"]
+      }
+    }
+  ]
+}
+
+// Response: 200 OK
+{
+  "tool_calls": [
+    {
+      "id": "call_98a72b",
+      "name": "create_moving_average",
+      "arguments": {
+        "period": 20,
+        "method": "SMA"
+      }
+    }
+  ]
+}
+```
+

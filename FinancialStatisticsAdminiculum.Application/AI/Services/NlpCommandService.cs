@@ -38,15 +38,18 @@ namespace FinancialStatisticsAdminiculum.Application.AI.Services
         private readonly ILogger<NlpCommandService> _logger;
         private readonly IToolResolver? _toolResolver;
         private readonly IAiSchemaAggregator? _schemaAggregator;
+        private readonly IFunctionGemmaClient? _gemmaClient;
 
         public NlpCommandService(
             ILogger<NlpCommandService> logger,
             IToolResolver? toolResolver = null,
-            IAiSchemaAggregator? schemaAggregator = null)
+            IAiSchemaAggregator? schemaAggregator = null,
+            IFunctionGemmaClient? gemmaClient = null)
         {
             _logger = logger;
             _toolResolver = toolResolver;
             _schemaAggregator = schemaAggregator;
+            _gemmaClient = gemmaClient;
         }
 
         public async Task<NlpCommandResultDto> ProcessCommandAsync(Guid workspaceId, string prompt, CancellationToken ct = default)

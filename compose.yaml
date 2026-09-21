@@ -17,7 +17,7 @@ services:
         condition: service_healthy
       seq:
         condition: service_started
-      api:
+      functiongemma-model:
         condition: service_healthy
       RabbitMQ:
         condition: service_healthy
@@ -80,10 +80,12 @@ services:
       - backend
     restart: always
 
-  api:
+  functiongemma-model:
     build:
       context: .
-      dockerfile: FunctionGemma.Api/Dockerfile
+      dockerfile: docker/model/Dockerfile
+    ports:
+      - "8080:8080"
     networks:
       - backend
     depends_on:

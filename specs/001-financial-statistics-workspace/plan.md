@@ -8,7 +8,7 @@
 
 ## Summary
 
-Build an unguided, high-performance financial statistics workspace application for experimenting with financial concepts from first principles. The application combines an interactive React-based node canvas (`@xyflow/react`) featuring fine-grained atomic computational entities, an omnipresent natural language command palette powered by the backend's FunctionGemma AI tool engine (`IGemmaTool`), real-time observability into statistical distributions and formula mechanics, and extreme multi-format export capabilities (high-DPI PNG, SVG, publication-grade PDF dossiers, CSV, and portable workspace manifests).
+Build an unguided, high-performance financial statistics workspace application for experimenting with financial concepts from first principles. The application combines an interactive React-based node canvas (`@xyflow/react`) featuring fine-grained atomic computational entities, an omnipresent natural language command palette powered by containerized AI models (e.g., FunctionGemma running in standalone containers launched via `docker run`), real-time observability into statistical distributions and formula mechanics using React visx pure-SVG graphics (`@visx/*`), and extreme multi-format export capabilities (lossless vector SVG, high-DPI PNG, publication-grade PDF dossiers, CSV, and portable workspace manifests).
 
 ---
 
@@ -18,9 +18,10 @@ Build an unguided, high-performance financial statistics workspace application f
 
 **Primary Dependencies**: 
 - *Backend*: ASP.NET Core 8.0, Entity Framework Core 8 (`Npgsql.EntityFrameworkCore.PostgreSQL`), RabbitMQ.Client, Serilog, OpenTelemetry (Traces + Metrics), Castle DynamicProxy.
-- *Frontend*: React 18+, Vite, Tailwind CSS, shadcn/ui (Radix primitives), Zod (schema validation), TanStack Query (server state & caching), Lucide React (icons), Zustand (fine-grained reactive store), `@xyflow/react` (React Flow), Lightweight Charts, Chart.js / D3, `html-to-image`, `jspdf`, `jspdf-autotable`.
+- *Frontend*: React 18+, Vite, Tailwind CSS, shadcn/ui (Radix primitives), Zod (schema validation), TanStack Query (server state & caching), Lucide React (icons), Zustand (fine-grained reactive store), `@xyflow/react` (React Flow), `@visx/*` (Airbnb visx for React SVG graphics: `@visx/shape`, `@visx/scale`, `@visx/curve`, `@visx/gradient`, `@visx/axis`, `@visx/grid`, `@visx/responsive`, `@visx/tooltip`), `html-to-image`, `jspdf`, `jspdf-autotable`.
+- *AI Models*: Containerized inference microservices deployed via `docker run` (packaging FunctionGemma with ONNX Runtime GenAI, tokenizer, and weights, exposing HTTP/REST `/invocations` and `/health` endpoints).
 
-**Visual Design**: Open to customization. The UI layer uses Tailwind CSS utility classes and unopinionated shadcn/ui component primitives styled via CSS variables (theme tokens for colors, borders, typography, and spacing). Visual styling is intentionally decoupled from layout and mathematical logic, allowing rapid theming and customization without rewriting components.
+**Visual Design**: Open to customization. The UI layer uses Tailwind CSS utility classes and unopinionated shadcn/ui component primitives styled via CSS variables (theme tokens for colors, borders, typography, and spacing). Visual styling is intentionally decoupled from layout and mathematical logic, allowing rapid theming and customization without rewriting components. React visx renders native SVG elements, allowing charts, curves, and sparklines to directly consume Tailwind theme tokens (`stroke-primary`, `fill-primary/20`, etc.).
 
 **Storage**: PostgreSQL 16 (relational tables for assets/time-series, JSONB for workspace topology snapshots and audit logs), Browser LocalStorage/IndexedDB for local workspace caching and uncommitted drafts.
 
@@ -28,21 +29,22 @@ Build an unguided, high-performance financial statistics workspace application f
 - *Backend*: xUnit, FluentAssertions, Moq, Testcontainers for PostgreSQL / RabbitMQ.
 - *Frontend*: Vitest, React Testing Library, jsdom.
 
-**Target Platform**: Modern Desktop Web Browsers (Chrome, Firefox, Safari, Edge) on Linux, macOS, and Windows; Linux containerized backend via Docker Compose.
+**Target Platform**: Modern Desktop Web Browsers (Chrome, Firefox, Safari, Edge) on Linux, macOS, and Windows; Linux containerized backend and models via `docker run` / Docker Compose.
 
-**Project Type**: Multi-tier Web Application (React SPA frontend + ASP.NET Core Web API backend + FunctionGemma AI service + PostgreSQL + RabbitMQ).
+**Project Type**: Multi-tier Web Application (React SPA frontend + ASP.NET Core Web API backend + Containerized AI model services + PostgreSQL + RabbitMQ).
 
 **Performance Goals**:
 - $<200$ ms reactive recalculation across connected atomic entities on parameter change (up to 10,000 observations).
 - $<2.0$ seconds roundtrip for natural language command parsing, dynamic tool resolution, and canvas mutation.
-- $<1.0$ second instant generation of high-resolution vector/raster graphics (PNG at 300+ DPI / SVG).
+- $<1.0$ second instant generation of high-resolution vector/raster graphics (lossless vector SVG / PNG at 300+ DPI via visx SVG DOM).
 - $<3.0$ seconds compilation and delivery of publication-grade multi-page PDF dossiers.
 
 **Constraints**:
 - Strictly unguided UX: zero onboarding tutorials, modal wizards, or forced linear setup sequences.
-- Everything immediately observable: compact live sparklines on nodes and deep statistical inspectors (KDE, CDF, quantiles, formulas).
+- Everything immediately observable: compact live sparklines on nodes and deep statistical inspectors (KDE, CDF, quantiles, formulas) built with React visx.
 - High financial precision: calculations enforce deterministic numeric representations (`decimal`).
 - 100% reversible operations: single-click undo for all NLP-driven structural modifications.
+- Model Containerization: AI models MUST be containerized independently and runnable via `docker run`, isolating model runtimes and weights from the core .NET application lifecycle.
 
 **Scale/Scope**: Support 50+ interconnected atomic entities per canvas with 10,000+ observations per time-series stream.
 
@@ -141,12 +143,12 @@ FinancialStatisticsAdminiculum.Web/
 └── tests/                           # Vitest component & kernel unit tests
 
 # Cross-Service & Supporting Projects
-FunctionGemma.Api/                   # Dedicated ONNX Runtime GenAI inference service
+FunctionGemma.Api/                   # Dedicated ONNX Runtime GenAI inference service (containerized via docker run)
 Shared/                              # Shared.Contracts & Shared.Entities
 compose.yaml                         # Multi-service container orchestration
 ```
 
-**Structure Decision**: A modern decoupled web architecture pairing the existing ASP.NET Core Clean Architecture backend with a newly scaffolded React TypeScript application (`FinancialStatisticsAdminiculum.Web`). The frontend leverages Vite, Tailwind CSS, shadcn/ui, Zod, TanStack Query, Lucide React, and Zustand to deliver high-performance reactivity, contract-first runtime validation, clean iconography, and open, customizable styling.
+**Structure Decision**: A modern decoupled web architecture pairing the existing ASP.NET Core Clean Architecture backend with a React TypeScript application (`FinancialStatisticsAdminiculum.Web`). The frontend leverages Vite, Tailwind CSS, shadcn/ui, Zod, TanStack Query, Lucide React, Zustand, and React visx (`@visx/*`) to deliver high-performance reactivity, contract-first runtime validation, clean iconography, pure-SVG vector graphics, and open customizable styling. AI models are containerized independently and executed via `docker run`.
 
 ---
 
@@ -158,4 +160,6 @@ compose.yaml                         # Multi-service container orchestration
 | :--- | :--- | :--- |
 | Client-Side Statistical Kernel | Implemented in pure TypeScript utility functions | Sending all slider tweaks to the server violates the 200ms interactive threshold (SC-001). |
 | React Flow Canvas | Leverages `@xyflow/react` | Building custom canvas nodes, zoom/pan math, and bezier connection lines from scratch introduces massive accidental complexity. |
+| React visx for Graphics | Pure SVG React primitives (`@visx/shape`, `@visx/scale`, `@visx/curve`, `@visx/grid`, `@visx/axis`) | HTML5 Canvas-based libraries (e.g. Chart.js) render raster bitmaps, preventing lossless vector SVG exports and blocking direct styling via Tailwind CSS variables and theme tokens. |
+| Model Containerization via `docker run` | Self-contained model containers packaging weights, ONNX Runtime GenAI, and REST/gRPC endpoints | Embedding model weights and Python/C++ ONNX dependencies inside the .NET application container bloats build times, couples inference hardware dependencies, and complicates independent model versioning and scaling. |
 | Hybrid Export Strategy | Client-side PNG/SVG/CSV + Server/Client PDF | Browser `window.print()` cannot produce standalone publication-grade assets or vector diagrams. |

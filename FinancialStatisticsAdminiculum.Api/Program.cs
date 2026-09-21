@@ -122,6 +122,7 @@ namespace FinancialStatisticsAdminiculum.Api
 
                 // Register WorkspaceService and NlpCommandService
                 builder.Services.AddScoped<IWorkspaceService, WorkspaceService>();
+                builder.Services.AddHttpClient<IFunctionGemmaClient, FinancialStatisticsAdminiculum.Infrastructure.AI.FunctionGemmaHttpClient>();
                 builder.Services.AddScoped<FinancialStatisticsAdminiculum.Application.AI.Services.INlpCommandService, FinancialStatisticsAdminiculum.Application.AI.Services.NlpCommandService>();
 
                 // Configure CORS for Web frontend

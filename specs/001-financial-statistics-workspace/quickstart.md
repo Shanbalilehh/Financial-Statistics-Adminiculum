@@ -13,20 +13,29 @@ This guide defines step-by-step validation scenarios to verify that the Financia
 
 ## Prerequisites & Environment Setup
 
-1. **Backend Infrastructure**:
+1. **Backend Infrastructure & Containerized Models**:
    - .NET 8.0 SDK installed
    - PostgreSQL 16 running (via `compose.yaml` or local instance)
    - RabbitMQ 3 with AMQP enabled (via `compose.yaml`)
-   - FunctionGemma AI inference service running (via `compose.yaml` or local mock)
+   - Containerized FunctionGemma AI model service running via `docker run`
 
 2. **Frontend Environment**:
    - Node.js 20+ and npm / pnpm installed
-   - React 18+ application scaffold in `FinancialStatisticsAdminiculum.Web` (Vite, Tailwind CSS, shadcn/ui, Zod, TanStack Query, Lucide React, Zustand)
+   - React 18+ application scaffold in `FinancialStatisticsAdminiculum.Web` (Vite, Tailwind CSS, shadcn/ui, Zod, TanStack Query, Lucide React, Zustand, React visx `@visx/*`)
 
 3. **Starting the Services**:
    ```bash
-   # Terminal 1: Spin up container dependencies (PostgreSQL, RabbitMQ, Seq, FunctionGemma)
-   docker compose up -d db RabbitMQ seq api
+   # Terminal 1a: Spin up core infrastructure dependencies (PostgreSQL, RabbitMQ, Seq)
+   docker compose up -d db RabbitMQ seq
+
+   # Terminal 1b: Launch containerized FunctionGemma model service via docker run
+   docker run -d \
+     --name functiongemma-model \
+     --network backend \
+     -p 8080:8080 \
+     -e MODEL_PATH=/app/models/functiongemma_oga \
+     -e EXECUTION_PROVIDER=CPU \
+     financial-statistics/functiongemma-model:latest
 
    # Terminal 2: Run .NET Web API
    dotnet run --project FinancialStatisticsAdminiculum.Api
@@ -50,7 +59,7 @@ This guide defines step-by-step validation scenarios to verify that the Financia
    - Drag a `MovingAverage` node (configured to period: `20`, type: `SMA`) onto the canvas.
    - Drag a connection wire from `PriceStream:prices` output to `MovingAverage:series` input.
 2. **Expected Outcome**:
-   - The `MovingAverage` node immediately renders an interactive sparkline showing the 20-period moving average superimposed on the price series.
+   - The `MovingAverage` node immediately renders an interactive pure-SVG sparkline using React visx (`@visx/shape` `LinePath`) showing the 20-period moving average superimposed on the price series.
    - Adjusting the `period` slider from `20` to `50` updates the sparkline and calculation metrics within <200ms without page reloads.
 
 ---
@@ -83,7 +92,7 @@ This guide defines step-by-step validation scenarios to verify that the Financia
    - Open the **Statistics View** side inspector.
 2. **Expected Outcome**:
    - The inspector displays:
-     1. Empirical Probability Density Function (KDE plot) and histogram distribution bins.
+     1. Empirical Probability Density Function (KDE plot) and histogram distribution bins rendered as pure SVG via React visx (`@visx/shape` `AreaClosed`, `LinePath`, `Bar`, `@visx/scale`, `@visx/axis`).
      2. Exact moment metrics: Mean, Variance, StdDev, Skewness, Kurtosis.
      3. Quantile table ($p01, p05, p50, p95, p99$).
      4. Mathematical formula representation: $\sigma_{\text{ann}} = \sqrt{252} \times \sqrt{\frac{1}{N-1}\sum (r_t - \bar{r})^2}$ with active parameter values substituted.
@@ -96,7 +105,9 @@ This guide defines step-by-step validation scenarios to verify that the Financia
 **Goal**: Validate high-fidelity export to PNG, SVG, multi-page PDF, and structured CSV/JSON.
 
 1. **Action**:
-   - In the top toolbar, click **Export** -> **High-Res PNG (300 DPI)**.
+   - In the top toolbar, click **Export** -> **Vector SVG**.
+     - *Verify*: Browser immediately downloads a crisp, lossless vector SVG diagram serialized directly from the React visx SVG DOM.
+   - Click **Export** -> **High-Res PNG (300 DPI)**.
      - *Verify*: Browser immediately initiates download of a crisp, high-resolution image within <1s.
    - Click **Export** -> **Analytical PDF Dossier**.
      - *Verify*: A multi-page, formatted PDF is generated within <3s featuring executive summary metrics, vector charts, full parameter tables, and formula references without visual clipping.
